@@ -72,7 +72,52 @@ public class Scanner {
                     }
                     else if(c == '/'){
                         estado = 26;
-                        lexema += c;
+                        lexema += c;  
+                    }else if(c == '('){       
+                        addToken(TipoToken.LEFT_PAREN, lexema);
+                        estado = 0;
+                        lexema = "";
+                    }else if(c == ')'){       
+                        addToken(TipoToken.RIGHT_PAREN, lexema);
+                        estado = 0;
+                        lexema = "";
+                    }else if(c == '{'){       
+                        addToken(TipoToken.LEFT_BRACE, lexema);
+                        estado = 0;
+                        lexema = "";
+                    }else if(c == '}'){       
+                        addToken(TipoToken.RIGHT_BRACE, lexema);
+                        estado = 0;
+                        lexema = "";
+                    }else if(c == ','){       
+                        addToken(TipoToken.COMMA, lexema);
+                        estado = 0;
+                        lexema = "";
+                    }
+                    else if(c == '.'){       
+                        addToken(TipoToken.DOT, lexema);
+                        estado = 0;
+                        lexema = "";
+                    }else if(c == '-'){       
+                        addToken(TipoToken.MINUS, lexema);
+                        estado = 0;
+                        lexema = "";
+                    }else if(c == '+'){       
+                        addToken(TipoToken.PLUS, lexema);
+                        estado = 0;
+                        lexema = "";
+                    }else if(c == ';'){       
+                        addToken(TipoToken.SEMICOLON, lexema);
+                        estado = 0;
+                        lexema = "";
+                    }else if(c == '/'){       
+                        addToken(TipoToken.SLASH, lexema);
+                        estado = 0;
+                        lexema = "";
+                    }else if(c == '*'){       
+                        addToken(TipoToken.STAR, lexema);
+                        estado = 0;
+                        lexema = "";
                     }
                 break;
                 case 1:
@@ -348,6 +393,7 @@ public class Scanner {
             }
         }
 
+    
     // Verificar si el comentario se dejó abierto al finalizar el análisis, no si es necesario
     if (estado == 27) {
         throw new Exception("Error en el análisis léxico: El comentario no se cerró adecuadamente.");
@@ -355,6 +401,10 @@ public class Scanner {
 
         return tokens;
     }
-
+    private void addToken(TipoToken tipo, String lexema) {
+        Token t = new Token(tipo, lexema);
+        tokens.add(t);
+        lexema = "";
+    }
 
 }
