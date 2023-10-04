@@ -110,10 +110,6 @@ public class Scanner {
                         addToken(TipoToken.SEMICOLON, lexema);
                         estado = 0;
                         lexema = "";
-                    }else if(c == '/'){       
-                        addToken(TipoToken.SLASH, lexema);
-                        estado = 0;
-                        lexema = "";
                     }else if(c == '*'){       
                         addToken(TipoToken.STAR, lexema);
                         estado = 0;
@@ -131,46 +127,9 @@ public class Scanner {
                         tokens.add(t);
                         estado = 0;
                         lexema = ""; 
+                        i --;
                     }
                     break;
-               /*  case 1:
-                    lexema +=c;
-                    if(c != '>' && c =='='){
-                        Token t = new Token(TipoToken.GREATER_EQUAL, lexema);
-                        tokens.add(t);
-                        estado = 0;
-                        lexema ="";
-                    }
-                    else {
-                        Token t = new Token(TipoToken.GREATER, lexema);
-                        tokens.add(t);
-                        estado = 0;
-                        lexema = ""; 
-                    }
-                break;
-                case 2:
-                    lexema += c;
-                    if( c != '='){
-                        Token t = new Token(TipoToken.GREATER_EQUAL, lexema);
-                        tokens.add(t);
-                        estado = 0;
-                        lexema ="";
-                    }
-                break;
-                case 4:
-                    lexema +=c;
-                    if(c != '<' && c == '='){
-                        Token t = new Token(TipoToken.LESS_EQUAL, lexema);
-                        tokens.add(t);
-                        estado = 0;
-                        lexema ="";
-                    }else {
-                        Token t = new Token(TipoToken.LESS, lexema);
-                        tokens.add(t);
-                        estado = 0;
-                        lexema = ""; 
-                    }
-                break;*/
                 case 4:
                 lexema += c;
                 if (c == '=') {
@@ -182,22 +141,9 @@ public class Scanner {
                     tokens.add(t);
                     estado = 0;
                     lexema = ""; 
+                    i--;
                 }
                 break;            
-                /*case 7:
-                    lexema +=c;
-                    if(c == '='){
-                        Token t = new Token(TipoToken.EQUAL_EQUAL, lexema);
-                        tokens.add(t);
-                        estado = 0;
-                        lexema ="";
-                    }else{
-                        Token t = new Token(TipoToken.EQUAL, lexema);
-                        tokens.add(t);
-                        estado = 0;
-                        lexema = ""; 
-                    }
-                break;*/
                 case 7:
                     lexema += c;
                     if (c == '=') {
@@ -209,6 +155,7 @@ public class Scanner {
                         tokens.add(t);
                         estado = 0;
                         lexema = ""; 
+                        i --;
                     }
                     break;
                 case 9:
@@ -234,18 +181,6 @@ public class Scanner {
                         i--;
                     }
                 break;
-                /*case 10:
-                    lexema +=c ;
-                    if(c != '!' && c == '='){
-                        Token t = new Token(TipoToken.BANG_EQUAL, lexema);
-                        tokens.add(t);
-                    }else {
-                        Token t = new Token(TipoToken.BANG, lexema);
-                        tokens.add(t);
-                    }
-                    estado = 0;
-                    lexema = ""; 
-                break;*/
                 case 10:
                     lexema += c;
                     if (c == '=') {
@@ -257,6 +192,7 @@ public class Scanner {
                         tokens.add(t);
                         estado = 0;
                         lexema = ""; 
+                        i--;
                     }
                     break;
                 case 15:
@@ -274,6 +210,7 @@ public class Scanner {
                         tokens.add(t);
                         estado = 0;
                         lexema = "";
+                        i--;
                     }
                     break;
                 case 16:
@@ -296,6 +233,7 @@ public class Scanner {
                         tokens.add(t);
                         estado = 0;
                         lexema = "";
+                        i--;
                     }
                     break;
                 case 18:
@@ -332,8 +270,7 @@ public class Scanner {
                 case 24:
                     lexema += c;
                     if (c == '"') {
-                        Token t = new Token(TipoToken.STRING, lexema);
-                        tokens.add(t);
+                        tokens.add(new Token(TipoToken.STRING, lexema));
                         estado = 0;
                         lexema = ""; 
                     }else if (c == '\n') {
@@ -354,6 +291,7 @@ public class Scanner {
                         tokens.add(t);
                         estado = 0;
                         lexema = ""; 
+                        i--;
                     }
                 break;
                 case 27:
@@ -361,7 +299,8 @@ public class Scanner {
                     if(c=='*'){
                         estado = 28;
                         lexema += c;
-                    }else {
+                    }
+                    else {
                         estado = 27;
                         lexema += c;
                     }
@@ -379,7 +318,6 @@ public class Scanner {
                         estado = 27;
                         lexema += c;
                     }
-
                 break;
                 case 30:
                     if(c == '\n'){
