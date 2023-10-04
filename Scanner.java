@@ -127,7 +127,7 @@ public class Scanner {
                         tokens.add(t);
                         estado = 0;
                         lexema = ""; 
-                        i --;
+                        i --;  // posible error
                     }
                     break;
                 case 4:
@@ -141,7 +141,7 @@ public class Scanner {
                     tokens.add(t);
                     estado = 0;
                     lexema = ""; 
-                    i--;
+                    i--;  // posible error
                 }
                 break;            
                 case 7:
@@ -192,7 +192,7 @@ public class Scanner {
                         tokens.add(t);
                         estado = 0;
                         lexema = ""; 
-                        i--;
+                        i--; //posible error
                     }
                     break;
                 case 15:
@@ -279,60 +279,50 @@ public class Scanner {
                     break;
                 case 26:
                     lexema += c;
-                    if(c=='*'){
+                    if (c == '*') {
                         estado = 27;
-                        lexema += c;
-                    }
-                    else if(c == '/'){
+                    } else if (c == '/') {
                         estado = 30;
-                        lexema += c;
-                    }else{
-                        Token t = new Token(TipoToken.SLASH,lexema);
+                    } else {
+                        Token t = new Token(TipoToken.SLASH, lexema);
                         tokens.add(t);
                         estado = 0;
-                        lexema = ""; 
-                        i--;
+                        lexema = "";
+                        i--; // Retrocede un paso para analizar el siguiente caracter
                     }
-                break;
+                    break;
                 case 27:
                     lexema += c;
-                    if(c=='*'){
+                    if (c == '*') {
                         estado = 28;
-                        lexema += c;
+                    } else {
+                        // Permanece en el estado 27 mientras no encuentres '*'
                     }
-                    else {
-                        estado = 27;
-                        lexema += c;
-                    }
-                break;
+                    break;
                 case 28:
-                    lexema +=c;
-                    if(c=='*'){
-                        estado =28;
-                        lexema += c;
-                    }
-                    else if(c == '/'){
+                    lexema += c;
+                    if (c == '*') {
+                        // Permanece en el estado 28 mientras encuentres '*'
+                    } else if (c == '/') {
                         estado = 0;
                         lexema = "";
-                    }else{
+                    } else {
                         estado = 27;
-                        lexema += c;
                     }
-                break;
+                    break;
                 case 30:
-                    if(c == '\n'){
-                        estado= 0;
-                        lexema += c;
-                    }else{
-                        estado = 30;
-                        lexema += c;
+                    if (c == '\n') {
+                        estado = 0;
+                        lexema = "";
+                    } else {
+                        // Permanece en el estado 30 mientras no encuentres '\n'
                     }
-                break;
+                    break;
             }
         }
 
     
-    // Verificar si el comentario se dejó abierto al finalizar el análisis, no si es necesario
+    // Verificar si el comentario se dejó abierto al finalizar el análisis
     if (estado == 27) {
         throw new Exception("Error en el análisis léxico: El comentario no se cerró adecuadamente.");
     }
