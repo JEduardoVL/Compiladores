@@ -73,47 +73,67 @@ public class Scanner {
                     else if(c == '/'){
                         estado = 26;
                         lexema += c;  
-                    }else if(c == '('){       
-                        addToken(TipoToken.LEFT_PAREN, lexema);
+                    }else if(c == '('){    
+                        lexema +=c; 
+                        Token t = new Token(TipoToken.LEFT_PAREN, lexema);
+                        tokens.add(t);
                         estado = 0;
-                        lexema = "";
-                    }else if(c == ')'){       
-                        addToken(TipoToken.RIGHT_PAREN, lexema);
+                        lexema = ""; 
+                    }else if(c == ')'){   
+                        lexema +=c;  
+                        Token t = new Token(TipoToken.RIGHT_PAREN, lexema);
+                        tokens.add(t);
                         estado = 0;
-                        lexema = "";
-                    }else if(c == '{'){       
-                        addToken(TipoToken.LEFT_BRACE, lexema);
+                        lexema = ""; 
+                    }else if(c == '{'){  
+                        lexema +=c; 
+                        Token t = new Token(TipoToken.LEFT_BRACE, lexema);
+                        tokens.add(t);
                         estado = 0;
-                        lexema = "";
-                    }else if(c == '}'){       
-                        addToken(TipoToken.RIGHT_BRACE, lexema);
+                        lexema = ""; 
+                    }else if(c == '}'){  
+                        lexema +=c;   
+                        Token t = new Token(TipoToken.RIGHT_BRACE, lexema);
+                        tokens.add(t);
                         estado = 0;
-                        lexema = "";
-                    }else if(c == ','){       
-                        addToken(TipoToken.COMMA, lexema);
+                        lexema = ""; 
+                    }else if(c == ','){  
+                        lexema +=c; 
+                        Token t = new Token(TipoToken.COMMA, lexema);
+                        tokens.add(t);
                         estado = 0;
-                        lexema = "";
+                        lexema = ""; 
                     }
-                    else if(c == '.'){       
-                        addToken(TipoToken.DOT, lexema);
+                    else if(c == '.'){  
+                        lexema +=c; 
+                        Token t = new Token(TipoToken.DOT, lexema);
+                        tokens.add(t);
                         estado = 0;
-                        lexema = "";
-                    }else if(c == '-'){       
-                        addToken(TipoToken.MINUS, lexema);
+                        lexema = ""; 
+                    }else if(c == '-'){    
+                        lexema +=c;    
+                        Token t = new Token(TipoToken.MINUS, lexema);
+                        tokens.add(t);
                         estado = 0;
-                        lexema = "";
-                    }else if(c == '+'){       
-                        addToken(TipoToken.PLUS, lexema);
+                        lexema = ""; 
+                    }else if(c == '+'){ 
+                        lexema +=c;       
+                        Token t = new Token(TipoToken.PLUS, lexema);
+                        tokens.add(t);
                         estado = 0;
-                        lexema = "";
-                    }else if(c == ';'){       
-                        addToken(TipoToken.SEMICOLON, lexema);
+                        lexema = ""; 
+                    }else if(c == ';'){ 
+                        lexema +=c;  
+                        Token t = new Token(TipoToken.SEMICOLON, lexema);
+                        tokens.add(t);
                         estado = 0;
-                        lexema = "";
-                    }else if(c == '*'){       
-                        addToken(TipoToken.STAR, lexema);
+                        lexema = ""; 
+                    }else if(c == '*'){   
+                        lexema +=c;     
+                        Token t = new Token(TipoToken.STAR, lexema);
+                        tokens.add(t);
                         estado = 0;
-                        lexema = "";
+                        lexema = ""; 
                     }
                 break;
                 case 1:
@@ -127,7 +147,7 @@ public class Scanner {
                         tokens.add(t);
                         estado = 0;
                         lexema = ""; 
-                        i --;  // posible error
+                        i --;  
                     }
                     break;
                 case 4:
@@ -141,7 +161,7 @@ public class Scanner {
                     tokens.add(t);
                     estado = 0;
                     lexema = ""; 
-                    i--;  // posible error
+                    i--;  
                 }
                 break;            
                 case 7:
@@ -180,7 +200,7 @@ public class Scanner {
                         lexema = "";
                         i--;
                     }
-                break;
+                    break;
                 case 10:
                     lexema += c;
                     if (c == '=') {
@@ -192,7 +212,7 @@ public class Scanner {
                         tokens.add(t);
                         estado = 0;
                         lexema = ""; 
-                        i--; //posible error
+                        i--; 
                     }
                     break;
                 case 15:
@@ -267,13 +287,16 @@ public class Scanner {
                         i--; // Retrocede un paso para analizar el siguiente caracter
                     }
                     break;
-                case 24:
+                    case 24:
                     lexema += c;
                     if (c == '"') {
-                        tokens.add(new Token(TipoToken.STRING, lexema));
+                        // Extraer la cadena sin las comillas
+                        String cadenaSinComillas = lexema.substring(1, lexema.length() - 1);
+                        // Crear un nuevo token con la cadena como literal
+                        tokens.add(new Token(TipoToken.STRING, lexema, cadenaSinComillas));
                         estado = 0;
-                        lexema = ""; 
-                    }else if (c == '\n') {
+                        lexema = "";
+                    } else if (c == '\n') {
                         throw new Exception("Error en el análisis léxico: Salto de línea no permitido dentro de una cadena.");
                     }
                     break;
@@ -326,13 +349,6 @@ public class Scanner {
     if (estado == 27) {
         throw new Exception("Error en el análisis léxico: El comentario no se cerró adecuadamente.");
     }
-
         return tokens;
     }
-    private void addToken(TipoToken tipo, String lexema) {
-        Token t = new Token(tipo, lexema);
-        tokens.add(t);
-        lexema = "";
-    }
-
 }

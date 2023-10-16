@@ -19,4 +19,16 @@ public class Token {
     public String toString() {
         return "<" + tipo + " " + lexema + " " + literal + ">";
     }
+
+    /*@Override
+    public String toString() {
+        if (tipo == TipoToken.STRING) {
+            return "<" + tipo + " " + lexema + " " + literal + ">";
+        } else {
+            return "<" + tipo + " " + lexema + " " + literal + ">";
+        }
+    }*/
+
+    
+    
 }
