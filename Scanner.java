@@ -5,8 +5,11 @@ import java.util.Map;
 
 public class Scanner {
 
-    private static final Map<String, TipoToken> palabrasReservadas;
+    private final String source;
+    
+    private final List<Token> tokens = new ArrayList<>();
 
+    private static final Map<String, TipoToken> palabrasReservadas;
     static {
         palabrasReservadas = new HashMap<>();
         palabrasReservadas.put("and",    TipoToken.AND);
@@ -24,18 +27,16 @@ public class Scanner {
         palabrasReservadas.put("while",  TipoToken.WHILE);
     }
 
-    private final String source;
-
-    private final List<Token> tokens = new ArrayList<>();
     
-    public Scanner(String source){
+    Scanner(String source){
         this.source = source + " ";
     }
 
-    public List<Token> scan() throws Exception {
-        String lexema = "";
+    List<Token> scan(){
         int estado = 0;
+        String lexema = "";
         char c;
+        int inicioLexema =0;
 
         for(int i=0; i<source.length(); i++){
             c = source.charAt(i);
@@ -238,7 +239,7 @@ public class Scanner {
                         estado = 17;
                         lexema += c;
                     } else {
-                        throw new Exception("Error en el análisis léxico: Se esperaba un dígito después del punto.");
+                    //    throw new Exception("Error en el análisis léxico: Se esperaba un dígito después del punto.");
                     }
                     break;
                 case 17:
@@ -264,7 +265,7 @@ public class Scanner {
                         estado = 19;
                         lexema += c;
                     } else {
-                        throw new Exception("Error en el análisis léxico: Se esperaba un dígito o '+'/'-' después de 'E'.");
+                      //  throw new Exception("Error en el análisis léxico: Se esperaba un dígito o '+'/'-' después de 'E'.");
                     }
                     break;
                 case 19:
@@ -272,7 +273,7 @@ public class Scanner {
                         estado = 20;
                         lexema += c;
                     } else {
-                        throw new Exception("Error en el análisis léxico: Se esperaba un dígito después de '+'/'-'.");
+                     //   throw new Exception("Error en el análisis léxico: Se esperaba un dígito después de '+'/'-'.");
                     }
                     break;
                 case 20:
@@ -297,7 +298,7 @@ public class Scanner {
                         estado = 0;
                         lexema = "";
                     } else if (c == '\n') {
-                        throw new Exception("Error en el análisis léxico: Salto de línea no permitido dentro de una cadena.");
+                       // throw new Exception("Error en el análisis léxico: Salto de línea no permitido dentro de una cadena.");
                     }
                     break;
                 case 26:
@@ -347,7 +348,7 @@ public class Scanner {
     
     // Verificar si el comentario se dejó abierto al finalizar el análisis
     if (estado == 27) {
-        throw new Exception("Error en el análisis léxico: El comentario no se cerró adecuadamente.");
+     //   throw new Exception("Error en el análisis léxico: El comentario no se cerró adecuadamente.");
     }
         return tokens;
     }
