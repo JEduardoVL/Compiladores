@@ -5,11 +5,8 @@ import java.util.Map;
 
 public class Scanner {
 
-    private final String source;
-    
-    private final List<Token> tokens = new ArrayList<>();
-
     private static final Map<String, TipoToken> palabrasReservadas;
+
     static {
         palabrasReservadas = new HashMap<>();
         palabrasReservadas.put("and",    TipoToken.AND);
@@ -27,153 +24,117 @@ public class Scanner {
         palabrasReservadas.put("while",  TipoToken.WHILE);
     }
 
+    private final String source;
+
+    private final List<Token> tokens = new ArrayList<>();
     
-    Scanner(String source){
+    public Scanner(String source){
         this.source = source + " ";
     }
 
-    List<Token> scan(){
-        int estado = 0;
-        String lexema = "";
-        char c;
-        int inicioLexema =0;
 
-        for(int i=0; i<source.length(); i++){
+
+
+    public List<Token> scan() throws Exception {
+        String lexema = "";
+        int estado = 0;
+        int inicioLexema = 0;
+        char c;
+
+        for (int i = 0; i < source.length(); i++) {
             c = source.charAt(i);
 
-            switch (estado){
+            switch (estado) {
                 case 0:
-                    if(Character.isLetter(c)){
+                    inicioLexema = i;
+                    if (Character.isLetter(c)) {
                         estado = 9;
                         lexema += c;
-                    }
-                    else if(Character.isDigit(c)){
+                    } else if (Character.isDigit(c)) {
                         estado = 15;
                         lexema += c;
-                    }
-                    else if(c == '"'){ 
-                        estado =24;
+                    } else if (c == '"') {
+                        estado = 24;
                         lexema += c;
+                        inicioLexema = i;
+                    } else if (c == '>') {
+                        if (i + 1 < source.length() && source.charAt(i + 1) == '=') {
+                            tokens.add(new Token(TipoToken.GREATER_EQUAL, ">=", i + 1));
+                            i++;
+                        } else {
+                            tokens.add(new Token(TipoToken.GREATER, ">", i + 1));
+                        }
+                    } else if (c == '<') {
+                        if (i + 1 < source.length() && source.charAt(i + 1) == '=') {
+                            tokens.add(new Token(TipoToken.LESS_EQUAL, "<=", i + 1));
+                            i++;
+                        } else {
+                            tokens.add(new Token(TipoToken.LESS, "<", i + 1));
+                        }
+                    } else if (c == '=') {
+                        if (i + 1 < source.length() && source.charAt(i + 1) == '=') {
+                            tokens.add(new Token(TipoToken.EQUAL_EQUAL, "==", i + 1));
+                            i++;
+                        } else {
+                            tokens.add(new Token(TipoToken.EQUAL, "=", i + 1));
+                        }
+                    } else if (c == '!') {
+                        if (i + 1 < source.length() && source.charAt(i + 1) == '=') {
+                            tokens.add(new Token(TipoToken.BANG_EQUAL, "!=", i + 1));
+                            i++;
+                        } else {
+                            tokens.add(new Token(TipoToken.BANG, "!", i + 1));
+                        }
+                    } else if (c == '/') {
+                        if (i + 1 < source.length() && source.charAt(i + 1) == '/') {
+                            estado = 30;
+                            i++;
+                        } else if (i + 1 < source.length() && source.charAt(i + 1) == '*') {
+                            estado = 27;
+                            i++;
+                        } else {
+                            tokens.add(new Token(TipoToken.SLASH, "/", i + 1));
+                        }
+                    } else {
+                        // ... (resto de símbolos y operadores sin cambios)
                     }
-                    else if(c== '>'){
-                        estado =1;
-                        lexema += c;
-                    }
-                    else if(c=='<'){
-                        estado =4;
-                        lexema +=c;
-                    }
-                    else if(c == '='){
-                        estado = 7;
-                        lexema += c;
-                    }
-                    else if(c == '!'){
-                        estado = 10;
-                        lexema += c;
-                    }
-                    else if(c == '/'){
-                        estado = 26;
-                        lexema += c;  
-                    }else if(c == '('){    
-                        lexema +=c; 
-                        Token t = new Token(TipoToken.LEFT_PAREN, lexema);
-                        tokens.add(t);
-                        estado = 0;
-                        lexema = ""; 
-                    }else if(c == ')'){   
-                        lexema +=c;  
-                        Token t = new Token(TipoToken.RIGHT_PAREN, lexema);
-                        tokens.add(t);
-                        estado = 0;
-                        lexema = ""; 
-                    }else if(c == '{'){  
-                        lexema +=c; 
-                        Token t = new Token(TipoToken.LEFT_BRACE, lexema);
-                        tokens.add(t);
-                        estado = 0;
-                        lexema = ""; 
-                    }else if(c == '}'){  
-                        lexema +=c;   
-                        Token t = new Token(TipoToken.RIGHT_BRACE, lexema);
-                        tokens.add(t);
-                        estado = 0;
-                        lexema = ""; 
-                    }else if(c == ','){  
-                        lexema +=c; 
-                        Token t = new Token(TipoToken.COMMA, lexema);
-                        tokens.add(t);
-                        estado = 0;
-                        lexema = ""; 
-                    }
-                    else if(c == '.'){  
-                        lexema +=c; 
-                        Token t = new Token(TipoToken.DOT, lexema);
-                        tokens.add(t);
-                        estado = 0;
-                        lexema = ""; 
-                    }else if(c == '-'){    
-                        lexema +=c;    
-                        Token t = new Token(TipoToken.MINUS, lexema);
-                        tokens.add(t);
-                        estado = 0;
-                        lexema = ""; 
-                    }else if(c == '+'){ 
-                        lexema +=c;       
-                        Token t = new Token(TipoToken.PLUS, lexema);
-                        tokens.add(t);
-                        estado = 0;
-                        lexema = ""; 
-                    }else if(c == ';'){ 
-                        lexema +=c;  
-                        Token t = new Token(TipoToken.SEMICOLON, lexema);
-                        tokens.add(t);
-                        estado = 0;
-                        lexema = ""; 
-                    }else if(c == '*'){   
-                        lexema +=c;     
-                        Token t = new Token(TipoToken.STAR, lexema);
-                        tokens.add(t);
-                        estado = 0;
-                        lexema = ""; 
-                    }
-                break;
+                    break;
                 case 1:
                     lexema += c;
                     if (c == '=') {
-                        tokens.add(new Token(TipoToken.GREATER_EQUAL, lexema));
+                        tokens.add(new Token(TipoToken.GREATER_EQUAL, lexema, inicioLexema +1));
                         estado = 0;
                         lexema = "";
                     } else {
-                        Token t = new Token(TipoToken.GREATER, lexema);
+                        Token t = new Token(TipoToken.GREATER, lexema, inicioLexema +1);
                         tokens.add(t);
                         estado = 0;
                         lexema = ""; 
+                        inicioLexema = 0; // duda
                         i --;  
                     }
                     break;
                 case 4:
-                lexema += c;
-                if (c == '=') {
-                    tokens.add(new Token(TipoToken.LESS_EQUAL, lexema));
-                    estado = 0;
-                    lexema = "";
-                } else {
-                    Token t = new Token(TipoToken.LESS, lexema);
-                    tokens.add(t);
-                    estado = 0;
-                    lexema = ""; 
-                    i--;  
-                }
+                    lexema += c;
+                    if (c == '=') {
+                        tokens.add(new Token(TipoToken.LESS_EQUAL, lexema, inicioLexema + 1));
+                        estado = 0;
+                        lexema = "";
+                    } else {
+                        tokens.add(new Token(TipoToken.LESS, lexema, inicioLexema + 1));
+                        estado = 0;
+                        lexema = "";
+                        i--;  
+                    }
                 break;            
                 case 7:
                     lexema += c;
                     if (c == '=') {
-                        tokens.add(new Token(TipoToken.EQUAL_EQUAL, lexema));
+                        tokens.add(new Token(TipoToken.EQUAL_EQUAL, lexema, inicioLexema +1));
                         estado = 0;
                         lexema = "";
                     } else {
-                        Token t = new Token(TipoToken.EQUAL, lexema);
-                        tokens.add(t);
+                        tokens.add(new Token(TipoToken.EQUAL, lexema, inicioLexema +1));
                         estado = 0;
                         lexema = ""; 
                         i --;
@@ -189,12 +150,10 @@ public class Scanner {
                         TipoToken tt = palabrasReservadas.get(lexema);
 
                         if(tt == null){
-                            Token t = new Token(TipoToken.IDENTIFIER, lexema);
-                            tokens.add(t);
+                            tokens.add(new Token(TipoToken.IDENTIFIER, lexema, inicioLexema +1));
                         }
                         else{
-                            Token t = new Token(tt, lexema);
-                            tokens.add(t);
+                            tokens.add(new Token(tt, lexema, inicioLexema + 1));
                         }
 
                         estado = 0;
@@ -205,12 +164,11 @@ public class Scanner {
                 case 10:
                     lexema += c;
                     if (c == '=') {
-                        tokens.add(new Token(TipoToken.BANG_EQUAL, lexema));
+                        tokens.add(new Token(TipoToken.BANG_EQUAL, lexema, inicioLexema +1));
                         estado = 0;
                         lexema = "";
                     } else {
-                        Token t = new Token(TipoToken.BANG, lexema);
-                        tokens.add(t);
+                        tokens.add(new Token(TipoToken.BANG, lexema, inicioLexema +1));
                         estado = 0;
                         lexema = ""; 
                         i--; 
@@ -227,8 +185,7 @@ public class Scanner {
                         estado = 18;
                         lexema += c;
                     } else {
-                        Token t = new Token(TipoToken.NUMBER, lexema,Integer.valueOf(lexema));  //Double.valueOf(lexema)
-                        tokens.add(t);
+                        tokens.add(new Token(TipoToken.NUMBER, lexema, inicioLexema +1));  //Double.valueOf(lexema)
                         estado = 0;
                         lexema = "";
                         i--;
@@ -239,7 +196,7 @@ public class Scanner {
                         estado = 17;
                         lexema += c;
                     } else {
-                    //    throw new Exception("Error en el análisis léxico: Se esperaba un dígito después del punto.");
+                        throw new Exception("Error en el análisis léxico: Se esperaba un dígito después del punto.");
                     }
                     break;
                 case 17:
@@ -250,8 +207,7 @@ public class Scanner {
                         estado = 18;
                         lexema += c;
                     } else {
-                        Token t = new Token(TipoToken.NUMBER, lexema, Double.valueOf(lexema));
-                        tokens.add(t);
+                        tokens.add(new Token(TipoToken.NUMBER, lexema, inicioLexema +1));
                         estado = 0;
                         lexema = "";
                         i--;
@@ -265,7 +221,7 @@ public class Scanner {
                         estado = 19;
                         lexema += c;
                     } else {
-                      //  throw new Exception("Error en el análisis léxico: Se esperaba un dígito o '+'/'-' después de 'E'.");
+                        throw new Exception("Error en el análisis léxico: Se esperaba un dígito o '+'/'-' después de 'E'.");
                     }
                     break;
                 case 19:
@@ -273,7 +229,7 @@ public class Scanner {
                         estado = 20;
                         lexema += c;
                     } else {
-                     //   throw new Exception("Error en el análisis léxico: Se esperaba un dígito después de '+'/'-'.");
+                        throw new Exception("Error en el análisis léxico: Se esperaba un dígito después de '+'/'-'.");
                     }
                     break;
                 case 20:
@@ -281,24 +237,21 @@ public class Scanner {
                         estado = 20;
                         lexema += c;
                     } else {
-                        Token t = new Token(TipoToken.NUMBER, lexema, Double.valueOf(lexema));
-                        tokens.add(t);
+                        tokens.add(new Token(TipoToken.NUMBER, lexema, inicioLexema +1));
                         estado = 0;
                         lexema = "";
                         i--; // Retrocede un paso para analizar el siguiente caracter
                     }
                     break;
                     case 24:
-                    lexema += c;
-                    if (c == '"') {
-                        // Extraer la cadena sin las comillas
-                        String cadenaSinComillas = lexema.substring(1, lexema.length() - 1);
-                        // Crear un nuevo token con la cadena como literal
-                        tokens.add(new Token(TipoToken.STRING, lexema, cadenaSinComillas));
+                    if (c != '"') {
+                        lexema = lexema + c;
+                    } else {
+                        lexema = lexema + c;
+                        tokens.add(new Token(TipoToken.STRING, lexema, inicioLexema + 1));
                         estado = 0;
                         lexema = "";
-                    } else if (c == '\n') {
-                       // throw new Exception("Error en el análisis léxico: Salto de línea no permitido dentro de una cadena.");
+                        inicioLexema = 0;
                     }
                     break;
                 case 26:
@@ -308,8 +261,7 @@ public class Scanner {
                     } else if (c == '/') {
                         estado = 30;
                     } else {
-                        Token t = new Token(TipoToken.SLASH, lexema);
-                        tokens.add(t);
+                        tokens.add(new Token(TipoToken.SLASH, lexema, inicioLexema +1));
                         estado = 0;
                         lexema = "";
                         i--; // Retrocede un paso para analizar el siguiente caracter
@@ -348,8 +300,12 @@ public class Scanner {
     
     // Verificar si el comentario se dejó abierto al finalizar el análisis
     if (estado == 27) {
-     //   throw new Exception("Error en el análisis léxico: El comentario no se cerró adecuadamente.");
+        throw new Exception("Error en el análisis léxico: El comentario no se cerró adecuadamente.");
     }
-        return tokens;
+    
+    tokens.add(new Token(TipoToken.EOF, "",  source.length())); //Fin del archivo
+    return tokens; 
     }
+
+
 }

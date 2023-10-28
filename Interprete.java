@@ -46,15 +46,17 @@ public class Interprete {
 
     private static void ejecutar(String source){
         Scanner scanner = new Scanner(source);
-        List<Token> tokens = scanner.scan();
-        /*
-        for(Token token : tokens){
-            System.out.println(token);
-        }*/
+        List<Token> tokens = null;
+        try {
+            tokens = scanner.scan();
+        } catch (Exception e) {
+            System.err.println("Error durante el análisis léxico: " + e.getMessage());
+            return;
+        }
         
-        ASDR Program = new ASDR(tokens);
-        Program.progra();
-        
+        // El resto de tu código sigue aquí
+        Program program = new ASDR(tokens);
+        program.progra();
     }
 
     /*
