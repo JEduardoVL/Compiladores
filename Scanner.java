@@ -50,9 +50,11 @@ public class Scanner {
                     if (Character.isLetter(c)) {
                         estado = 9;
                         lexema += c;
+                       // inicioLexema =i;
                     } else if (Character.isDigit(c)) {
                         estado = 15;
                         lexema += c;
+                        inicioLexema =i;
                     } else if (c == '"') {
                         estado = 24;
                         lexema += c;
@@ -119,7 +121,7 @@ public class Scanner {
                     break; 
                 case 9:
                     if(Character.isLetter(c) || Character.isDigit(c)){
-                        estado = 9;
+                       // estado = 9;
                         lexema += c;
                     }
                     else{
@@ -152,6 +154,7 @@ public class Scanner {
                         tokens.add(new Token(TipoToken.NUMBER, lexema, inicioLexema +1));  //Double.valueOf(lexema)
                         estado = 0;
                         lexema = "";
+                        inicioLexema=0;
                         i--;
                     }
                     break;
@@ -209,28 +212,15 @@ public class Scanner {
                     break;
                     case 24:
                     if (c != '"') {
-                        lexema = lexema + c;
+                        lexema += c;
                     } else {
-                        lexema = lexema + c;
+                        lexema += c;
                         tokens.add(new Token(TipoToken.STRING, lexema, inicioLexema + 1));
                         estado = 0;
                         lexema = "";
                         inicioLexema = 0;
                     }
                     break;
-                /*case 26:
-                    lexema += c;
-                    if (c == '*') {
-                        estado = 27;
-                    } else if (c == '/') {
-                        estado = 30;
-                    } else {
-                        tokens.add(new Token(TipoToken.SLASH, lexema, inicioLexema +1));
-                        estado = 0;
-                        lexema = "";
-                        i--; // Retrocede un paso para analizar el siguiente caracter
-                    }
-                    break;*/
                 case 27:
                     lexema += c;
                     if (c == '*') {
@@ -251,11 +241,12 @@ public class Scanner {
                     }
                     break;
                 case 30:
-                    if (c == '\n') {
-                        estado = 0;
-                        lexema = "";
+                    if (c != '\n') {
+                        lexema += c;
                     } else {
-                        // Permanece en el estado 30 mientras no encuentres '\n'
+                        estado=0;
+                        lexema="";
+                        inicioLexema=0;
                     }
                     break;
             }
