@@ -95,51 +95,28 @@ public class Scanner {
                         } else {
                             tokens.add(new Token(TipoToken.SLASH, "/", i + 1));
                         }
-                    } else {
-                        // ... (resto de símbolos y operadores sin cambios)
+                    }else if(c == '('){    
+                        tokens.add(new Token(TipoToken.LEFT_PAREN,"(",i+1));
+                    }else if(c == ')'){   
+                        tokens.add(new Token(TipoToken.RIGHT_PAREN,")",i+1)); 
+                    }else if(c == '{'){  
+                        tokens.add(new Token(TipoToken.LEFT_BRACE,"{",i+1));
+                    }else if(c == '}'){  
+                        tokens.add(new Token(TipoToken.RIGHT_BRACE,"}",i+1));
+                    }else if(c == ','){  
+                        tokens.add(new Token(TipoToken.COMMA,",",i+1));
+                    }else if(c == '.'){  
+                        tokens.add(new Token(TipoToken.DOT,".",i+1));
+                    }else if(c == '-'){    
+                        tokens.add(new Token(TipoToken.MINUS,"-",i+1));
+                    }else if(c == '+'){ 
+                        tokens.add(new Token(TipoToken.PLUS,"+",i+1));
+                    }else if(c == ';'){ 
+                        tokens.add(new Token(TipoToken.SEMICOLON,";",i+1));
+                    }else if(c == '*'){   
+                        tokens.add(new Token(TipoToken.STAR,"*",i+1));
                     }
-                    break;
-                case 1:
-                    lexema += c;
-                    if (c == '=') {
-                        tokens.add(new Token(TipoToken.GREATER_EQUAL, lexema, inicioLexema +1));
-                        estado = 0;
-                        lexema = "";
-                    } else {
-                        Token t = new Token(TipoToken.GREATER, lexema, inicioLexema +1);
-                        tokens.add(t);
-                        estado = 0;
-                        lexema = ""; 
-                        inicioLexema = 0; // duda
-                        i --;  
-                    }
-                    break;
-                case 4:
-                    lexema += c;
-                    if (c == '=') {
-                        tokens.add(new Token(TipoToken.LESS_EQUAL, lexema, inicioLexema + 1));
-                        estado = 0;
-                        lexema = "";
-                    } else {
-                        tokens.add(new Token(TipoToken.LESS, lexema, inicioLexema + 1));
-                        estado = 0;
-                        lexema = "";
-                        i--;  
-                    }
-                break;            
-                case 7:
-                    lexema += c;
-                    if (c == '=') {
-                        tokens.add(new Token(TipoToken.EQUAL_EQUAL, lexema, inicioLexema +1));
-                        estado = 0;
-                        lexema = "";
-                    } else {
-                        tokens.add(new Token(TipoToken.EQUAL, lexema, inicioLexema +1));
-                        estado = 0;
-                        lexema = ""; 
-                        i --;
-                    }
-                    break;
+                    break; 
                 case 9:
                     if(Character.isLetter(c) || Character.isDigit(c)){
                         estado = 9;
@@ -159,19 +136,6 @@ public class Scanner {
                         estado = 0;
                         lexema = "";
                         i--;
-                    }
-                    break;
-                case 10:
-                    lexema += c;
-                    if (c == '=') {
-                        tokens.add(new Token(TipoToken.BANG_EQUAL, lexema, inicioLexema +1));
-                        estado = 0;
-                        lexema = "";
-                    } else {
-                        tokens.add(new Token(TipoToken.BANG, lexema, inicioLexema +1));
-                        estado = 0;
-                        lexema = ""; 
-                        i--; 
                     }
                     break;
                 case 15:
@@ -254,7 +218,7 @@ public class Scanner {
                         inicioLexema = 0;
                     }
                     break;
-                case 26:
+                /*case 26:
                     lexema += c;
                     if (c == '*') {
                         estado = 27;
@@ -266,7 +230,7 @@ public class Scanner {
                         lexema = "";
                         i--; // Retrocede un paso para analizar el siguiente caracter
                     }
-                    break;
+                    break;*/
                 case 27:
                     lexema += c;
                     if (c == '*') {
