@@ -534,7 +534,7 @@ public class ASDR implements Program{
         }
     }
 
-    private void Functions(){
+    /*private void Functions(){
         if(hayErrores)
         return;
         if(preanalisis.tipo == TipoToken.FUN){
@@ -544,7 +544,7 @@ public class ASDR implements Program{
         }else{
             // vacio
         }
-    }
+    }*/
 
     private void Parameters_Opc(){
         if(hayErrores)
