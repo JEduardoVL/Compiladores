@@ -534,18 +534,6 @@ public class ASDR implements Program{
         }
     }
 
-    /*private void Functions(){
-        if(hayErrores)
-        return;
-        if(preanalisis.tipo == TipoToken.FUN){
-            match(TipoToken.FUN);
-            Fun_Decl();
-            Functions();
-        }else{
-            // vacio
-        }
-    }*/
-
     private void Parameters_Opc(){
         if(hayErrores)
         return;
