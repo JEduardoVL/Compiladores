@@ -6,7 +6,7 @@ import java.util.List;
 public class ASDR implements Program{
 
     private int i = 0;
-    private boolean hayErrores = false;
+    //private boolean hayErrores = false;
     private Token preanalisis;
     private final List<Token> tokens;
 
@@ -16,13 +16,18 @@ public class ASDR implements Program{
         preanalisis = this.tokens.get(i);
     }
 
-    public boolean progra() throws ParserException { // Declare that progra() may throw ParserException
-        declaration();
-        if(preanalisis.tipo == TipoToken.EOF && !hayErrores){
-            System.out.println("ASDR correcto");
-            return true;
-        } else {
-            System.out.println("Se encontraron errores ASDR");
+    public boolean progra() {
+        try {
+            declaration();
+            if (preanalisis.tipo == TipoToken.EOF) {
+                System.out.println("ASDR correcto");
+                return true;
+            } else {
+                System.out.println("Se encontraron errores ASDR");
+            }
+        } catch (ParserException e) {
+            System.out.println("Se encontraron errores ASDR: " + e.getMessage());
+            return false;
         }
         return false;
     }
@@ -212,7 +217,7 @@ public class ASDR implements Program{
         return expr;
     }
 
-    private Expression assignment(){
+    private Expression assignment() throws ParserException{
         Expression expr = logic_or();
         expr = assignment_opc(expr);
         return expr;
@@ -323,7 +328,8 @@ public class ASDR implements Program{
                 operador = previous();
                 expr2 = unary();
                 expb = new ExprBinary(expr, operador, expr2);
-                return factor2(expb);
+            default:
+                
         }
         return expr;
     }
@@ -359,6 +365,8 @@ public class ASDR implements Program{
                 match(TipoToken.RIGHT_PAREN);
                 ExprCallFunction ecf = new ExprCallFunction(expr, lstArguments);
                 return call2(ecf);
+            default:
+            // algo no esperado
         }
         return expr;
     }
@@ -392,6 +400,8 @@ public class ASDR implements Program{
                 // Tiene que ser cachado aquello que retorna
                 match(TipoToken.RIGHT_PAREN);
                 return new ExprGrouping(expr);
+            default:
+            //Algo diferente de lo anterior
         }
         return null;
     }
@@ -402,18 +412,18 @@ private Statement function() throws ParserException {
     match(TipoToken.IDENTIFIER);
     Token functionName = previous();
     match(TipoToken.LEFT_PAREN);
-    List<Token> parameters = parameters();
+    List<Token> parameters = parameters_opc(); // Cambiado a parameters_opc()
     match(TipoToken.RIGHT_PAREN);
-    StmtBlock body = block(); // Assuming block() returns a StmtBlock
-    return new StmtFunction(functionName, parameters, body); // Assuming StmtFunction represents a function declaration
+    StmtBlock body = block(); // Asumiendo que block() retorna un StmtBlock
+    return new StmtFunction(functionName, parameters, body); // Asumiendo que StmtFunction representa una declaración de función
 }
 
-    // PARAMETERS_OPC production
+// PARAMETERS_OPC production
 private List<Token> parameters_opc() throws ParserException {
     if (preanalisis.getTipo() != TipoToken.RIGHT_PAREN) {
         return parameters();
     }
-    return Collections.emptyList(); // Represents the epsilon (Ɛ) production
+    return Collections.emptyList(); // Representa la producción epsilon (Ɛ)
 }
 
 // PARAMETERS production
