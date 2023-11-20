@@ -55,16 +55,16 @@ public class ASDR implements Program{
 
     private Statement fun_decl() throws ParserException {
     match(TipoToken.FUN);
-    return function(); // Assuming function() returns a Statement object
+    return function(); 
 }
 
     private Statement var_decl() throws ParserException {
         match(TipoToken.VAR);
         match(TipoToken.IDENTIFIER);
         Token variableName = previous();
-        Expression initializer = var_init(); // Assuming var_init() returns an Expression or null
+        Expression initializer = var_init(); 
         match(TipoToken.SEMICOLON);
-        return new StmtVar(variableName, initializer); // Assuming StmtVar is the class for variable declaration statements
+        return new StmtVar(variableName, initializer); 
     }
 
     private Expression var_init() throws ParserException {
@@ -72,7 +72,7 @@ public class ASDR implements Program{
             match(TipoToken.EQUAL);
             return expression();
         }
-        return null; // Represents the epsilon (Ɛ) production
+        return null; // E
     }
 
     //////////////////////////////////// SENTENCIAS
@@ -82,18 +82,17 @@ public class ASDR implements Program{
             case IF:
                 return if_stmt(); 
             case FOR:
-                return for_stmt(); // Already returns Statement
+                return for_stmt(); 
             case PRINT:
-                return print_stmt(); // Assuming print_stmt() returns Statement
+                return print_stmt(); 
             case RETURN:
-                return return_stmt(); // Assuming return_stmt() returns Statement
+                return return_stmt(); 
             case WHILE:
-                return while_stmt(); // Assuming while_stmt() returns Statement
+                return while_stmt(); 
             case LEFT_BRACE:
-                return block(); // Assuming block() returns Statement
+                return block(); 
             default:
-                // Handle other cases or throw an exception
-                throw new ParserException("Unexpected statement type");
+                throw new ParserException("Declaracion no valida. ");
         }
     }
 
@@ -111,17 +110,17 @@ public class ASDR implements Program{
         Expression increment = for_stmt_3();
         match(TipoToken.RIGHT_PAREN);
         Statement body = statement();
-        return new StmtFor(initializer, condition, increment, body); // Assuming StmtFor is the class for for-loop statements
+        return new StmtFor(initializer, condition, increment, body); 
     }
     
     private Statement for_stmt_1() throws ParserException {
         if (preanalisis.getTipo() == TipoToken.VAR) {
-            return var_decl(); // Assuming var_decl() returns a Statement
+            return var_decl(); 
         } else if (preanalisis.getTipo() != TipoToken.SEMICOLON) {
-            return expr_stmt(); // Assuming expr_stmt() returns a Statement
+            return expr_stmt();
         } else {
             match(TipoToken.SEMICOLON);
-            return null; // No initializer
+            return null; 
         }
     }
     
@@ -132,15 +131,15 @@ public class ASDR implements Program{
             return condition;
         } else {
             match(TipoToken.SEMICOLON);
-            return null; // No condition (always true)
+            return null; 
         }
     }
     
     private Expression for_stmt_3() throws ParserException {
         if (preanalisis.getTipo() != TipoToken.RIGHT_PAREN) {
-            return expression(); // Assuming this returns an Expression
+            return expression(); 
         } else {
-            return null; // No increment
+            return null; // Sin incremento
         }
     }
 
@@ -150,7 +149,7 @@ public class ASDR implements Program{
         Expression condition = expression();
         match(TipoToken.RIGHT_PAREN);
         Statement thenBranch = statement();
-        Statement elseBranch = else_statement(); // Modified to call else_statement
+        Statement elseBranch = else_statement(); 
         return new StmtIf(condition, thenBranch, elseBranch);
     }
 
@@ -159,7 +158,7 @@ public class ASDR implements Program{
             match(TipoToken.ELSE);
             return statement();
         }
-        return null; // Represents the epsilon (Ɛ) production
+        return null; // E
     }
 
     private Statement print_stmt() throws ParserException {
@@ -171,7 +170,7 @@ public class ASDR implements Program{
 
     private Statement return_stmt() throws ParserException {
         match(TipoToken.RETURN);
-        Expression value = return_exp_opc(); // Modified to call return_exp_opc
+        Expression value = return_exp_opc(); 
         match(TipoToken.SEMICOLON);
         return new StmtReturn(value);
     }
@@ -180,7 +179,7 @@ public class ASDR implements Program{
         if (preanalisis.getTipo() != TipoToken.SEMICOLON) {
             return expression();
         }
-        return null; // Represents the epsilon (Ɛ) production
+        return null; // E
     }
 
     private Statement while_stmt() throws ParserException {
@@ -226,8 +225,8 @@ public class ASDR implements Program{
     private Expression assignment_opc(Expression expr) throws ParserException {
         if (preanalisis.getTipo() == TipoToken.EQUAL) {
             match(TipoToken.EQUAL);
-            Expression value = assignment(); // Asume recursión a la derecha
-            expr = new ExprAssign(previous(), value); // Asumiendo ExprAssignment es una clase para asignaciones
+            Expression value = assignment(); 
+            expr = new ExprAssign(previous(), value); 
         }
         return expr;
     }
@@ -396,7 +395,6 @@ public class ASDR implements Program{
             case LEFT_PAREN:
                 match(TipoToken.LEFT_PAREN);
                 Expression expr = expression();
-                // Tiene que ser cachado aquello que retorna
                 match(TipoToken.RIGHT_PAREN);
                 return new ExprGrouping(expr);
             default:
@@ -411,21 +409,19 @@ private Statement function() throws ParserException {
     match(TipoToken.IDENTIFIER);
     Token functionName = previous();
     match(TipoToken.LEFT_PAREN);
-    List<Token> parameters = parameters_opc(); // Cambiado a parameters_opc()
+    List<Token> parameters = parameters_opc(); 
     match(TipoToken.RIGHT_PAREN);
-    StmtBlock body = block(); // Asumiendo que block() retorna un StmtBlock
-    return new StmtFunction(functionName, parameters, body); // Asumiendo que StmtFunction representa una declaración de función
+    StmtBlock body = block(); 
+    return new StmtFunction(functionName, parameters, body); 
 }
 
-// PARAMETERS_OPC production
 private List<Token> parameters_opc() throws ParserException {
     if (preanalisis.getTipo() != TipoToken.RIGHT_PAREN) {
         return parameters();
     }
-    return Collections.emptyList(); // Representa la producción epsilon (Ɛ)
+    return Collections.emptyList(); // E
 }
 
-// PARAMETERS production
 private List<Token> parameters() throws ParserException {
     List<Token> params = new ArrayList<>();
     if (preanalisis.getTipo() == TipoToken.IDENTIFIER) {
@@ -439,8 +435,6 @@ private List<Token> parameters() throws ParserException {
 }
 
 private List<Token> parameters_2(List<Token> existingParams) throws ParserException {
-    // We've already matched an identifier and potentially a comma to get into PARAMETERS_2
-    // Now we look for more identifiers, each must be preceded by a comma
     while (preanalisis.getTipo() == TipoToken.COMMA) {
         match(TipoToken.COMMA);
         match(TipoToken.IDENTIFIER);
@@ -449,12 +443,11 @@ private List<Token> parameters_2(List<Token> existingParams) throws ParserExcept
     return existingParams;
 }
 
-// ARGUMENTS_OPC production
 private List<Expression> arguments_opc() throws ParserException {
     if (preanalisis.getTipo() != TipoToken.RIGHT_PAREN) {
         return arguments();
     }
-    return Collections.emptyList(); // Represents the epsilon (Ɛ) production
+    return Collections.emptyList(); // E
 }
 
 private List<Expression> arguments() throws ParserException {
@@ -489,6 +482,7 @@ private List<Expression> arguments() throws ParserException {
     }
 }
 
+// Anterior codigo que solo corresponde a la gramtica. 
     /*@Override
     public boolean progra() {
         Declaration();
