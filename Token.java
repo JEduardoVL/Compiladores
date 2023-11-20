@@ -5,7 +5,7 @@ public class Token {
     final int posicion;
     final Object literal;
 
-    public Token(TipoToken tipo, String lexema, int posicion) {
+    public Token(TipoToken tipo, String lexema, int posicion) { // 
         this.tipo = tipo;
         this.lexema = lexema;
         this.posicion = posicion;
@@ -15,7 +15,7 @@ public class Token {
     public Token(TipoToken tipo, String lexema, Object literal) {
         this.tipo = tipo;
         this.lexema = lexema;
-        this.posicion = 0;
+       this.posicion = 0;
         this.literal = literal;
     }
 
@@ -25,15 +25,14 @@ public class Token {
             return false;
         }
 
-        if(this.tipo == ((Token)o).tipo){
-            return true;
-        }
-
-        return false;
+        Token otherToken = (Token) o;
+        return this.tipo == otherToken.tipo;
     }
 
-    public String toString(){
-        return tipo + " " + lexema + " ";
+
+    @Override
+    public String toString() {
+        return tipo + " " + lexema + " " + (literal == null ? "" : literal.toString());
     }
 
 
