@@ -1,4 +1,3 @@
-
 public class ExprBinary extends Expression{
     final Expression left;
     final Token operator;

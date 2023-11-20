@@ -1,5 +1,3 @@
-
-
 public class StmtVar extends Statement {
     final Token name;
     final Expression initializer;

@@ -1,5 +1,3 @@
-
-
 class ExprVariable extends Expression {
     final Token name;
 

@@ -1,5 +1,3 @@
-
-
 public class ExprGet extends Expression{
     final Expression object;
     final Token name;

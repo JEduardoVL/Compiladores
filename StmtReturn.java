@@ -1,5 +1,3 @@
-
-
 public class StmtReturn extends Statement {
     final Expression value;
 

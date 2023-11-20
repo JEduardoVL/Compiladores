@@ -1,5 +1,3 @@
-
-
 public class ExprLogical extends Expression{
     final Expression left;
     final Token operator;
