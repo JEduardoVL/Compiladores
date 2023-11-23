@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -102,16 +103,51 @@ public class ASDR implements Program{
         return new StmtExpression(expr);
     }
 
-    private Statement for_stmt() throws ParserException {
+    /*private Statement for_stmt() throws ParserException {
         match(TipoToken.FOR);
         match(TipoToken.LEFT_PAREN);
-        Statement condiStatement = for_stmt_1();
+        Statement initializer = for_stmt_1();
         Expression condition = for_stmt_2();
         Expression increment = for_stmt_3();
         match(TipoToken.RIGHT_PAREN);
         Statement body = statement();
-        return new StmtLoop(condition, body);    //return new StmtFor(initializer, condition, increment, body); 
+        return new StmtFor(initializer, condition, increment, body); 
+    }*/
+
+    private Statement for_stmt() throws ParserException {
+    match(TipoToken.FOR);
+    match(TipoToken.LEFT_PAREN);
+    
+    // Parte de inicialización
+    Statement initialization = for_stmt_1();
+    
+    // Condición del bucle
+    Expression condition = for_stmt_2();
+    
+    // Post-expresión
+    Expression increment = for_stmt_3();
+    
+    // Consumir el siguiente token que debe ser un RIGHT_PAREN
+    match(TipoToken.RIGHT_PAREN);
+    
+    // Cuerpo del bucle
+    Statement body = statement();
+
+    // Si hay una inicialización, ejecútala primero.
+    if (initialization != null) {
+        // Si hay una incrementación, añádela después del cuerpo del bucle.
+        if (increment != null) {
+            body = new StmtBlock(Arrays.asList(body, new StmtExpression(increment)));
+        }
+        return new StmtBlock(Arrays.asList(initialization, new StmtLoop(condition, body)));
+    } else {
+        // Si no hay inicialización pero sí incrementación, añádela después del cuerpo del bucle.
+        if (increment != null) {
+            body = new StmtBlock(Arrays.asList(body, new StmtExpression(increment)));
+        }
+        return new StmtLoop(condition, body);
     }
+}
     
     private Statement for_stmt_1() throws ParserException {
         if (preanalisis.getTipo() == TipoToken.VAR) {
