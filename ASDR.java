@@ -105,12 +105,12 @@ public class ASDR implements Program{
     private Statement for_stmt() throws ParserException {
         match(TipoToken.FOR);
         match(TipoToken.LEFT_PAREN);
-        Statement initializer = for_stmt_1();
+        Statement condiStatement = for_stmt_1();
         Expression condition = for_stmt_2();
         Expression increment = for_stmt_3();
         match(TipoToken.RIGHT_PAREN);
         Statement body = statement();
-        return new StmtFor(initializer, condition, increment, body); 
+        return new StmtLoop(condition, body);    //return new StmtFor(initializer, condition, increment, body); 
     }
     
     private Statement for_stmt_1() throws ParserException {
