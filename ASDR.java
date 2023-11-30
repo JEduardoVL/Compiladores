@@ -41,6 +41,7 @@ public class ASDR implements Program{
                 result = var_decl();
             } else if (checkStatementStart(preanalisis.getTipo())) {
                 result = statement();
+                result = declaration();
             } else {
                 break;
             }
@@ -92,6 +93,15 @@ public class ASDR implements Program{
                 return while_stmt(); 
             case LEFT_BRACE:
                 return block(); 
+            case IDENTIFIER:
+            case NUMBER:
+            case STRING:
+            case TRUE:
+            case FALSE:
+            case NULL:
+            case BANG:
+            case MINUS:    
+                return expr_stmt();
             default:
                 throw new ParserException("Declaracion no valida. ");
         }
