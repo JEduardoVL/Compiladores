@@ -1,9 +1,15 @@
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Stack;
 
 public class ASDR implements Program{
+
+    private Stack<TablaSimbolos> stackTablasSimbolos;
+    private Map<String, TablaSimbolos> symbolTables; 
 
     private int i = 0;
     //private boolean hayErrores = false;
@@ -11,9 +17,58 @@ public class ASDR implements Program{
     private final List<Token> tokens;
 
 
-    public ASDR(List<Token> tokens){
+    public ASDR(List<Token> tokens) {
         this.tokens = tokens;
         preanalisis = this.tokens.get(i);
+
+        stackTablasSimbolos = new Stack<>();
+        stackTablasSimbolos.push(new TablaSimbolos());
+        symbolTables = new HashMap<>();
+        symbolTables.put("global", stackTablasSimbolos.peek());
+    }
+    
+    private String getCurrentScope() {
+        // Devuelve el alcance actual (nombre del ámbito)
+        return "global"; // Cambia esto según tu lógica
+    }
+
+    private void entrarNuevoAlcance(String nombreAlcance) {
+        stackTablasSimbolos.push(new TablaSimbolos());
+        symbolTables.put(nombreAlcance, stackTablasSimbolos.peek());
+    }
+
+    private void salirAlcanceActual(String nombreAlcance) {
+        stackTablasSimbolos.pop();
+        symbolTables.remove(nombreAlcance);
+    }
+
+    private void agregarIdentificador(String identificador, Object valor, String nombreAlcance) {
+        TablaSimbolos tabla = symbolTables.get(nombreAlcance);
+        if (tabla != null) {
+            tabla.asignar(identificador, valor, nombreAlcance);
+        } else {
+            throw new RuntimeException("Ámbito no encontrado: '" + nombreAlcance + "'.");
+        }
+    }
+
+    private boolean existeIdentificador(String identificador) {
+        for (TablaSimbolos tabla : symbolTables.values()) {
+            if (tabla.existeIdentificador(identificador, getCurrentScope())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Object obtener(String identificador) {
+        for (TablaSimbolos tabla : symbolTables.values()) {
+            try {
+                return tabla.obtener(identificador, getCurrentScope());
+            } catch (RuntimeException ignored) {
+                // La variable no está en este ámbito, continúa con el siguiente
+            }
+        }
+        throw new RuntimeException("Variable no definida '" + identificador + "'.");
     }
 
     public boolean progra() {
@@ -60,13 +115,27 @@ public class ASDR implements Program{
     return function(); 
 }
 
-    private Statement var_decl() throws ParserException {
+    /*private Statement var_decl() throws ParserException {
         match(TipoToken.VAR);
         match(TipoToken.IDENTIFIER);
         Token variableName = previous();
         Expression initializer = var_init(); 
+        agregarIdentificador(variableName.getLexema(), null); 
+
         match(TipoToken.SEMICOLON);
-        return new StmtVar(variableName, initializer); 
+        return new StmtVar(variableName, initializer);
+    }*/
+    private Statement var_decl() throws ParserException {
+        match(TipoToken.VAR);
+        match(TipoToken.IDENTIFIER);
+        Token variableName = previous();
+        Expression initializer = var_init();
+    
+        // Agrega el identificador a la tabla de símbolos global
+        agregarIdentificador(variableName.getLexema(), null, getCurrentScope());//agregarIdentificador(variableName.getLexema(), null); // Puedes asignar un valor inicial a null
+    
+        match(TipoToken.SEMICOLON);
+        return new StmtVar(variableName, initializer);
     }
 
     private Expression var_init() throws ParserException {
@@ -113,26 +182,21 @@ public class ASDR implements Program{
         return new StmtExpression(expr);
     }
 
-    /*private Statement for_stmt() throws ParserException {
-        match(TipoToken.FOR);
-        match(TipoToken.LEFT_PAREN);
-        Statement initializer = for_stmt_1();
-        Expression condition = for_stmt_2();
-        Expression increment = for_stmt_3();
-        match(TipoToken.RIGHT_PAREN);
-        Statement body = statement();
-        return new StmtFor(initializer, condition, increment, body); 
-    }*/
-
+  
     private Statement for_stmt() throws ParserException {
     match(TipoToken.FOR);
     match(TipoToken.LEFT_PAREN);
+    // Crear un nuevo alcance para el bucle for
+    entrarNuevoAlcance("for-loop");
+
     Statement initialization = for_stmt_1();
     Expression condition = for_stmt_2();
     Expression increment = for_stmt_3();
     match(TipoToken.RIGHT_PAREN);
     // Cuerpo del bucle
     Statement body = statement();
+    // Salir del alcance del bucle for
+    salirAlcanceActual(getCurrentScope());
     if (initialization != null) {
         if (increment != null) {
             body = new StmtBlock(Arrays.asList(body, new StmtExpression(increment)));
@@ -181,14 +245,21 @@ public class ASDR implements Program{
         match(TipoToken.LEFT_PAREN);
         Expression condition = expression();
         match(TipoToken.RIGHT_PAREN);
+
+        // Crear un nuevo alcance para el bloque if
+        entrarNuevoAlcance("if-block");
         Statement thenBranch = statement();
-        Statement elseBranch = else_statement(); 
+        Statement elseBranch = else_statement();
+        // Salir del alcance del bloque if 
+        salirAlcanceActual(getCurrentScope());
         return new StmtIf(condition, thenBranch, elseBranch);
     }
 
     private Statement else_statement() throws ParserException {
         if (preanalisis.getTipo() == TipoToken.ELSE) {
             match(TipoToken.ELSE);
+            // Crear un nuevo alcance para el bloque else
+            entrarNuevoAlcance("else-block");
             return statement();
         }
         return null; // E
@@ -220,17 +291,26 @@ public class ASDR implements Program{
         match(TipoToken.LEFT_PAREN);
         Expression condition = expression();
         match(TipoToken.RIGHT_PAREN);
+        // Crear un nuevo alcance para el bloque while
+        entrarNuevoAlcance("while-block");
         Statement body = statement();
+        // Salir del alcance del bloque while
+        salirAlcanceActual(getCurrentScope());
+
         return new StmtLoop(condition, body);
     }
 
     private StmtBlock block() throws ParserException {
         match(TipoToken.LEFT_BRACE);
+
+        // Crear un nuevo alcance para el bloque
+        entrarNuevoAlcance("block");
         List<Statement> statements = new ArrayList<>();
         while (!check(TipoToken.RIGHT_BRACE) && !check(TipoToken.EOF)) {
             statements.add(declaration());
         }
         match(TipoToken.RIGHT_BRACE);
+        salirAlcanceActual(getCurrentScope());
         return new StmtBlock(statements);
     }
 
@@ -255,11 +335,35 @@ public class ASDR implements Program{
     }
 
 
+    /*private Expression assignment_opc(Expression expr) throws ParserException {
+        if (preanalisis.getTipo() == TipoToken.EQUAL) {
+            match(TipoToken.EQUAL);
+            Token variableToken = previous();
+
+            if (!existeIdentificador(variableToken.getLexema())) {
+                throw new ParserException("Asignación a identificador no declarado: " + variableToken.getLexema());
+            }
+            Expression value = assignment(); 
+            expr = new ExprAssign(variableToken, value); 
+        }
+        return expr;
+    }*/
     private Expression assignment_opc(Expression expr) throws ParserException {
         if (preanalisis.getTipo() == TipoToken.EQUAL) {
             match(TipoToken.EQUAL);
-            Expression value = assignment(); 
-            expr = new ExprAssign(previous(), value); 
+            Token variableToken = previous();
+            
+            // Verifica si el identificador existe en la tabla de símbolos
+            if (!existeIdentificador(variableToken.getLexema())) {
+                throw new ParserException("Asignación a identificador no declarado: " + variableToken.getLexema());
+            }
+            
+            Expression value = assignment();
+    
+            // Asigna el valor a la variable en la tabla de símbolos
+            agregarIdentificador(variableToken.getLexema(), null, getCurrentScope());//agregarIdentificador(variableToken.getLexema(), value);
+    
+            expr = new ExprAssign(variableToken, value);
         }
         return expr;
     }
@@ -424,6 +528,9 @@ public class ASDR implements Program{
             case IDENTIFIER:
                 match(TipoToken.IDENTIFIER);
                 Token id = previous();
+                if (!existeIdentificador(id.getLexema())) {
+                    throw new ParserException("Identificador no declarado: " + id.getLexema());
+                }
                 return new ExprVariable(id);
             case LEFT_PAREN:
                 match(TipoToken.LEFT_PAREN);
@@ -438,14 +545,39 @@ public class ASDR implements Program{
 
 ///////////////////////////Otras 
     
+/* 
 private Statement function() throws ParserException {
     match(TipoToken.IDENTIFIER);
     Token functionName = previous();
+
+    // Registra la función en la tabla de símbolos global
+    agregarIdentificador(functionName.getLexema(), null, getCurrentScope());//agregarIdentificador(functionName.getLexema(), null); // Puedes asignar un valor inicial a null
+
     match(TipoToken.LEFT_PAREN);
-    List<Token> parameters = parameters_opc(); 
+    List<Token> parameters = parameters_opc();
     match(TipoToken.RIGHT_PAREN);
-    StmtBlock body = block(); 
-    return new StmtFunction(functionName, parameters, body); 
+    StmtBlock body = block();
+    return new StmtFunction(functionName, parameters, body);
+}*/
+private Statement function() throws ParserException {
+    match(TipoToken.IDENTIFIER);
+    Token functionName = previous();
+
+    // Crear un nuevo alcance en la tabla de símbolos para la función
+    entrarNuevoAlcance(functionName.getLexema());
+
+    // Registra la función en la tabla de símbolos global
+    agregarIdentificador(functionName.getLexema(), null, getCurrentScope());
+
+    match(TipoToken.LEFT_PAREN);
+    List<Token> parameters = parameters_opc();
+    match(TipoToken.RIGHT_PAREN);
+    StmtBlock body = block();
+
+    // Salir del alcance de la función
+    salirAlcanceActual(getCurrentScope());
+
+    return new StmtFunction(functionName, parameters, body);
 }
 
 private List<Token> parameters_opc() throws ParserException {
@@ -455,12 +587,32 @@ private List<Token> parameters_opc() throws ParserException {
     return Collections.emptyList(); // E
 }
 
+/*private List<Token> parameters() throws ParserException {
+    List<Token> params = new ArrayList<>();
+    if (preanalisis.getTipo() == TipoToken.IDENTIFIER) {
+        do {
+            match(TipoToken.IDENTIFIER);
+            Token paramToken = previous();
+
+            // Registra el parámetro en la tabla de símbolos de la función actual
+            agregarIdentificador(paramToken.getLexema(), null); // Puedes asignar un valor inicial a null
+            params.add(paramToken);
+            params = parameters_2(params);
+        } while (preanalisis.getTipo() == TipoToken.COMMA);
+    }
+    return params;
+}*/
 private List<Token> parameters() throws ParserException {
     List<Token> params = new ArrayList<>();
     if (preanalisis.getTipo() == TipoToken.IDENTIFIER) {
         do {
             match(TipoToken.IDENTIFIER);
-            params.add(previous());
+            Token paramToken = previous();
+
+            // Registra el parámetro en la tabla de símbolos de la función actual
+            agregarIdentificador(paramToken.getLexema(), null, getCurrentScope());//agregarIdentificador(paramToken.getLexema(), null); // Puedes asignar un valor inicial a null
+
+            params.add(paramToken);
             params = parameters_2(params);
         } while (preanalisis.getTipo() == TipoToken.COMMA);
     }
@@ -496,7 +648,7 @@ private List<Expression> arguments() throws ParserException {
     return args;
 }
    
-    private void match(TipoToken tt) throws ParserException {
+    /*private void match(TipoToken tt) throws ParserException {
         if(preanalisis.getTipo() ==  tt){
             i++;
             preanalisis = tokens.get(i);
@@ -506,6 +658,21 @@ private List<Expression> arguments() throws ParserException {
                     preanalisis.getPosicion() +  // .getLine()
                     ". Se esperaba " + preanalisis.getTipo() +
                     " pero se encontró " + tt;
+            throw new ParserException(message);
+        }
+    }*/
+
+    private void match(TipoToken tt) throws ParserException {
+        if (preanalisis.getTipo() == tt) {
+            i++;
+            if (i < tokens.size()) {
+                preanalisis = tokens.get(i);
+            }
+        } else {
+            String message = "Error en la línea " +
+                    preanalisis.getPosicion() +
+                    ". Se esperaba " + tt +
+                    " pero se encontró " + preanalisis.getTipo();
             throw new ParserException(message);
         }
     }
