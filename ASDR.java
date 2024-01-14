@@ -8,6 +8,7 @@ import java.util.Stack;
 
 public class ASDR implements Program{
 
+    private String nombreAlcanceActual;
     private Stack<TablaSimbolos> stackTablasSimbolos;
     private Map<String, TablaSimbolos> symbolTables; 
 
@@ -17,50 +18,90 @@ public class ASDR implements Program{
     private final List<Token> tokens;
 
 
+    /*public ASDR(List<Token> tokens) {
+        this.tokens = tokens;
+        preanalisis = this.tokens.get(i);
+    
+        stackTablasSimbolos = new Stack<>();
+        // Asegúrate de que siempre haya un alcance global
+        entrarNuevoAlcance("global");
+        TablaSimbolos tablaGlobal = new TablaSimbolos();
+        stackTablasSimbolos.push(tablaGlobal);
+        symbolTables = new HashMap<>();
+        symbolTables.put("global", tablaGlobal);
+    }*/
     public ASDR(List<Token> tokens) {
         this.tokens = tokens;
         preanalisis = this.tokens.get(i);
-
+    
         stackTablasSimbolos = new Stack<>();
-        stackTablasSimbolos.push(new TablaSimbolos());
+        TablaSimbolos tablaGlobal = new TablaSimbolos();
+        stackTablasSimbolos.push(tablaGlobal);
+        
+        // Inicializa el campo symbolTables
         symbolTables = new HashMap<>();
-        symbolTables.put("global", stackTablasSimbolos.peek());
+        symbolTables.put("global", tablaGlobal);
+        
+        entrarNuevoAlcance("global"); // Asegúrate de que siempre haya un alcance global
     }
     
+
+    public void entrarNuevoAlcance(String nombreAlcance) {
+        // Crea una nueva tabla de símbolos para el nuevo alcance
+        TablaSimbolos nuevaTabla = new TablaSimbolos();
+        // Añade la nueva tabla al mapa con el nombre del alcance como clave
+        symbolTables.put(nombreAlcance, nuevaTabla);
+        // Agrega la nueva tabla a la pila de tablas de símbolos
+        stackTablasSimbolos.push(nuevaTabla);
+        // Actualiza el nombre del alcance actual
+        nombreAlcanceActual = nombreAlcance;
+    }
+
+    private void salirAlcanceActual() {
+        if (!stackTablasSimbolos.isEmpty()) {
+            stackTablasSimbolos.pop();
+            if (!stackTablasSimbolos.isEmpty()) {
+                nombreAlcanceActual = stackTablasSimbolos.peek().getNombreAlcance();
+            } else {
+                nombreAlcanceActual = "global";
+            }
+        } else {
+            throw new RuntimeException("Intento de salir de un alcance cuando la pila está vacía");
+        }
+    }
+
     private String getCurrentScope() {
-        // Devuelve el alcance actual (nombre del ámbito)
-        return "global"; // Cambia esto según tu lógica
+        if (!stackTablasSimbolos.isEmpty()) {
+            return stackTablasSimbolos.peek().getNombreAlcance();
+        }
+        return "global";
     }
-
-    private void entrarNuevoAlcance(String nombreAlcance) {
-        stackTablasSimbolos.push(new TablaSimbolos());
-        symbolTables.put(nombreAlcance, stackTablasSimbolos.peek());
-    }
-
-    private void salirAlcanceActual(String nombreAlcance) {
-        stackTablasSimbolos.pop();
-        symbolTables.remove(nombreAlcance);
-    }
+    
 
     private void agregarIdentificador(String identificador, Object valor, String nombreAlcance) {
         TablaSimbolos tabla = symbolTables.get(nombreAlcance);
         if (tabla != null) {
-            tabla.asignar(identificador, valor, nombreAlcance);
+            tabla.asignar(identificador, valor);
         } else {
+            // Si no se encuentra el alcance, es un error grave
             throw new RuntimeException("Ámbito no encontrado: '" + nombreAlcance + "'.");
         }
     }
 
-    private boolean existeIdentificador(String identificador) {
-        for (TablaSimbolos tabla : symbolTables.values()) {
-            if (tabla.existeIdentificador(identificador, getCurrentScope())) {
-                return true;
-            }
+    private boolean existeIdentificador(String identificador, String nombreAlcance) {
+        // Primero busca en el alcance actual
+        if (symbolTables.get(nombreAlcance).existeIdentificador(identificador)) {
+            return true;
+        }
+        // Luego busca en el alcance global si es diferente del actual
+        if (!"global".equals(nombreAlcance)) {
+            return symbolTables.get("global").existeIdentificador(identificador);
         }
         return false;
     }
 
-    private Object obtener(String identificador) {
+
+    /*private Object obtener(String identificador) {
         for (TablaSimbolos tabla : symbolTables.values()) {
             try {
                 return tabla.obtener(identificador, getCurrentScope());
@@ -69,7 +110,7 @@ public class ASDR implements Program{
             }
         }
         throw new RuntimeException("Variable no definida '" + identificador + "'.");
-    }
+    }*/
 
     public boolean progra() {
         try {
@@ -196,7 +237,8 @@ public class ASDR implements Program{
     // Cuerpo del bucle
     Statement body = statement();
     // Salir del alcance del bucle for
-    salirAlcanceActual(getCurrentScope());
+    //salirAlcanceActual(getCurrentScope());
+    salirAlcanceActual();
     if (initialization != null) {
         if (increment != null) {
             body = new StmtBlock(Arrays.asList(body, new StmtExpression(increment)));
@@ -251,7 +293,8 @@ public class ASDR implements Program{
         Statement thenBranch = statement();
         Statement elseBranch = else_statement();
         // Salir del alcance del bloque if 
-        salirAlcanceActual(getCurrentScope());
+        //salirAlcanceActual(getCurrentScope());
+        salirAlcanceActual();
         return new StmtIf(condition, thenBranch, elseBranch);
     }
 
@@ -295,7 +338,8 @@ public class ASDR implements Program{
         entrarNuevoAlcance("while-block");
         Statement body = statement();
         // Salir del alcance del bloque while
-        salirAlcanceActual(getCurrentScope());
+        //salirAlcanceActual(getCurrentScope());
+        salirAlcanceActual();
 
         return new StmtLoop(condition, body);
     }
@@ -310,7 +354,7 @@ public class ASDR implements Program{
             statements.add(declaration());
         }
         match(TipoToken.RIGHT_BRACE);
-        salirAlcanceActual(getCurrentScope());
+        salirAlcanceActual();
         return new StmtBlock(statements);
     }
 
@@ -354,7 +398,7 @@ public class ASDR implements Program{
             Token variableToken = previous();
             
             // Verifica si el identificador existe en la tabla de símbolos
-            if (!existeIdentificador(variableToken.getLexema())) {
+            if (!existeIdentificador(variableToken.getLexema(), null)) {
                 throw new ParserException("Asignación a identificador no declarado: " + variableToken.getLexema());
             }
             
@@ -528,7 +572,7 @@ public class ASDR implements Program{
             case IDENTIFIER:
                 match(TipoToken.IDENTIFIER);
                 Token id = previous();
-                if (!existeIdentificador(id.getLexema())) {
+                if (!existeIdentificador(id.getLexema(), null)) {
                     throw new ParserException("Identificador no declarado: " + id.getLexema());
                 }
                 return new ExprVariable(id);
@@ -562,20 +606,26 @@ private Statement function() throws ParserException {
 private Statement function() throws ParserException {
     match(TipoToken.IDENTIFIER);
     Token functionName = previous();
+    String functionScope = functionName.getLexema(); // Utiliza el nombre de la función como nombre del alcance
 
-    // Crear un nuevo alcance en la tabla de símbolos para la función
-    entrarNuevoAlcance(functionName.getLexema());
+    // Verificar si estamos en el alcance de la función actual
+    if (!functionScope.equals(getCurrentScope())) {
+        // Crear un nuevo alcance en la tabla de símbolos solo si no estamos ya en el alcance de la función
+        entrarNuevoAlcance(functionScope);
 
-    // Registra la función en la tabla de símbolos global
-    agregarIdentificador(functionName.getLexema(), null, getCurrentScope());
+        // Registra la función en la tabla de símbolos global
+        agregarIdentificador(functionScope, null, getCurrentScope());
+    }
 
     match(TipoToken.LEFT_PAREN);
     List<Token> parameters = parameters_opc();
     match(TipoToken.RIGHT_PAREN);
     StmtBlock body = block();
 
-    // Salir del alcance de la función
-    salirAlcanceActual(getCurrentScope());
+    // Verificar si estamos en el alcance de la función actual
+    if (!functionScope.equals(getCurrentScope())) {
+        salirAlcanceActual();
+    }
 
     return new StmtFunction(functionName, parameters, body);
 }
@@ -610,7 +660,7 @@ private List<Token> parameters() throws ParserException {
             Token paramToken = previous();
 
             // Registra el parámetro en la tabla de símbolos de la función actual
-            agregarIdentificador(paramToken.getLexema(), null, getCurrentScope());//agregarIdentificador(paramToken.getLexema(), null); // Puedes asignar un valor inicial a null
+            agregarIdentificador(paramToken.getLexema(), null, getCurrentScope());
 
             params.add(paramToken);
             params = parameters_2(params);
