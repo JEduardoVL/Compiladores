@@ -12,6 +12,9 @@ public class ASDR implements Program{
     private Stack<TablaSimbolos> stackTablasSimbolos;
     private Map<String, TablaSimbolos> symbolTables; 
 
+    private int scopeCounter = 0;
+
+
     private int i = 0;
     //private boolean hayErrores = false;
     private Token preanalisis;
@@ -37,38 +40,51 @@ public class ASDR implements Program{
         stackTablasSimbolos = new Stack<>();
         TablaSimbolos tablaGlobal = new TablaSimbolos();
         stackTablasSimbolos.push(tablaGlobal);
-        
         // Inicializa el campo symbolTables
         symbolTables = new HashMap<>();
         symbolTables.put("global", tablaGlobal);
-        
-        entrarNuevoAlcance("global"); // Asegúrate de que siempre haya un alcance global
+        // No es necesario crear un alcance 'global' adicional aquí
+    }
+    
+    private String generateUniqueScopeName(String baseName) {
+        return baseName + "_" + scopeCounter++;
+    }
+
+    public void entrarNuevoAlcance(String baseName) {
+        String uniqueScopeName = generateUniqueScopeName(baseName);
+    
+        if (uniqueScopeName == null || uniqueScopeName.isEmpty()) {
+            throw new IllegalArgumentException("El nombre del alcance no puede ser nulo o vacío.");
+        }
+    
+        if (!symbolTables.containsKey(uniqueScopeName)) {
+            TablaSimbolos nuevaTabla = new TablaSimbolos();
+            symbolTables.put(uniqueScopeName, nuevaTabla);
+        } else {
+            // Esta línea no debería ser necesaria ya que estamos generando nombres únicos
+            throw new IllegalArgumentException("El alcance '" + uniqueScopeName + "' ya existe.");
+        }
+        nombreAlcanceActual = uniqueScopeName;
     }
     
 
-    public void entrarNuevoAlcance(String nombreAlcance) {
-        // Crea una nueva tabla de símbolos para el nuevo alcance
-        TablaSimbolos nuevaTabla = new TablaSimbolos();
-        // Añade la nueva tabla al mapa con el nombre del alcance como clave
-        symbolTables.put(nombreAlcance, nuevaTabla);
-        // Agrega la nueva tabla a la pila de tablas de símbolos
-        stackTablasSimbolos.push(nuevaTabla);
-        // Actualiza el nombre del alcance actual
-        nombreAlcanceActual = nombreAlcance;
-    }
-
-    private void salirAlcanceActual() {
-        if (!stackTablasSimbolos.isEmpty()) {
+    public void salirAlcanceActual() {
+        if (!nombreAlcanceActual.equals("global")) {
+            // Elimina el alcance actual de la pila y del mapa
             stackTablasSimbolos.pop();
+            symbolTables.remove(nombreAlcanceActual);
+    
+            // Actualiza el nombre del alcance actual al siguiente en la pila
             if (!stackTablasSimbolos.isEmpty()) {
                 nombreAlcanceActual = stackTablasSimbolos.peek().getNombreAlcance();
             } else {
                 nombreAlcanceActual = "global";
             }
         } else {
-            throw new RuntimeException("Intento de salir de un alcance cuando la pila está vacía");
+            throw new IllegalArgumentException("No se puede salir del alcance global.");
         }
     }
+    
 
     private String getCurrentScope() {
         if (!stackTablasSimbolos.isEmpty()) {
@@ -81,7 +97,7 @@ public class ASDR implements Program{
     private void agregarIdentificador(String identificador, Object valor, String nombreAlcance) {
         TablaSimbolos tabla = symbolTables.get(nombreAlcance);
         if (tabla != null) {
-            tabla.asignar(identificador, valor);
+            tabla.declare(identificador, valor);
         } else {
             // Si no se encuentra el alcance, es un error grave
             throw new RuntimeException("Ámbito no encontrado: '" + nombreAlcance + "'.");
@@ -89,13 +105,14 @@ public class ASDR implements Program{
     }
 
     private boolean existeIdentificador(String identificador, String nombreAlcance) {
-        // Primero busca en el alcance actual
-        if (symbolTables.get(nombreAlcance).existeIdentificador(identificador)) {
+        TablaSimbolos tablaActual = symbolTables.get(nombreAlcance);
+        if (tablaActual != null && tablaActual.isDeclared(identificador)) {
             return true;
         }
         // Luego busca en el alcance global si es diferente del actual
         if (!"global".equals(nombreAlcance)) {
-            return symbolTables.get("global").existeIdentificador(identificador);
+            TablaSimbolos tablaGlobal = symbolTables.get("global");
+            return tablaGlobal != null && tablaGlobal.isDeclared(identificador);
         }
         return false;
     }
@@ -291,10 +308,11 @@ public class ASDR implements Program{
         // Crear un nuevo alcance para el bloque if
         entrarNuevoAlcance("if-block");
         Statement thenBranch = statement();
-        Statement elseBranch = else_statement();
+        //Statement elseBranch = else_statement();
         // Salir del alcance del bloque if 
         //salirAlcanceActual(getCurrentScope());
         salirAlcanceActual();
+        Statement elseBranch = else_statement();
         return new StmtIf(condition, thenBranch, elseBranch);
     }
 
@@ -620,6 +638,14 @@ private Statement function() throws ParserException {
     match(TipoToken.LEFT_PAREN);
     List<Token> parameters = parameters_opc();
     match(TipoToken.RIGHT_PAREN);
+    
+    // Ahora debes manejar los parámetros de la función en el alcance actual
+    for (Token parameter : parameters) {
+        String paramName = parameter.getLexema();
+        // Agrega cada parámetro al alcance actual (la función)
+        agregarIdentificador(paramName, null, getCurrentScope());
+    }
+    
     StmtBlock body = block();
 
     // Verificar si estamos en el alcance de la función actual
@@ -629,6 +655,7 @@ private Statement function() throws ParserException {
 
     return new StmtFunction(functionName, parameters, body);
 }
+
 
 private List<Token> parameters_opc() throws ParserException {
     if (preanalisis.getTipo() != TipoToken.RIGHT_PAREN) {
