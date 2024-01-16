@@ -1,3 +1,15 @@
+/*public class StmtIf extends Statement {
+    final Expression condition;
+    final Statement thenBranch;
+    final Statement elseBranch;
+
+    StmtIf(Expression condition, Statement thenBranch, Statement elseBranch) {
+        this.condition = condition;
+        this.thenBranch = thenBranch;
+        this.elseBranch = elseBranch;
+    }
+}*/
+
 public class StmtIf extends Statement {
     final Expression condition;
     final Statement thenBranch;
@@ -8,4 +20,15 @@ public class StmtIf extends Statement {
         this.thenBranch = thenBranch;
         this.elseBranch = elseBranch;
     }
+
+    @Override
+public void execute() {
+    boolean conditionValue = (Boolean) condition.solve();
+    if (conditionValue) {
+        thenBranch.execute();
+    } else if (elseBranch != null) {
+        elseBranch.execute();
+    }
 }
+}
+

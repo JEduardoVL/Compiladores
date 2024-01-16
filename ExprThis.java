@@ -4,4 +4,10 @@ public class ExprThis extends Expression{
     ExprThis() {
         // this.keyword = keyword;
     }
+
+    @Override
+    Object solve() {
+       
+        throw new UnsupportedOperationException("Unimplemented method 'solve'");
+    }
 }

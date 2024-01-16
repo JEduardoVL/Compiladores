@@ -10,4 +10,10 @@ public class StmtFor extends Statement {
         this.increment = increment;
         this.body = body;
     }
+
+    @Override
+    void execute() {
+       
+        throw new UnsupportedOperationException("Unimplemented method 'execute'");
+    }
 }

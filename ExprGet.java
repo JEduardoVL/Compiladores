@@ -6,4 +6,10 @@ public class ExprGet extends Expression{
         this.object = object;
         this.name = name;
     }
+
+    @Override
+    Object solve() {
+   
+        throw new UnsupportedOperationException("Unimplemented method 'solve'");
+    }
 }

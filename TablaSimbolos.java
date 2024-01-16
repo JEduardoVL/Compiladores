@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class TablaSimbolos {
+    private static TablaSimbolos instance = null;
     private Map<String, Map<String, Object>> symbolTable;
     private List<String> scopeStack;
 
@@ -13,6 +14,13 @@ public class TablaSimbolos {
         enterNewScope("global"); // Scope global por defecto
     }
 
+    public static TablaSimbolos getInstance() {
+        if (instance == null) {
+            instance = new TablaSimbolos();
+        }
+        return instance;
+    }
+    
     public void enterNewScope(String scopeName) {
         if (!symbolTable.containsKey(scopeName)) {
             symbolTable.put(scopeName, new HashMap<>());

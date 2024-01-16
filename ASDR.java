@@ -8,6 +8,8 @@ import java.util.Stack;
 
 public class ASDR implements Program{
 
+    private static ASDR instance;
+
     private String nombreAlcanceActual;
     private Stack<String> scopeNamesStack = new Stack<>();
     private Map<String, TablaSimbolos> symbolTables = new HashMap<>();
@@ -28,6 +30,14 @@ public class ASDR implements Program{
         TablaSimbolos tablaGlobal = new TablaSimbolos();
         scopeNamesStack.push("global");
         symbolTables.put("global", tablaGlobal);
+    }
+
+    // Método estático para obtener la instancia
+    public static ASDR getInstance(List<Token> tokens) {
+        if (instance == null) {
+            instance = new ASDR(tokens);
+        }
+        return instance;
     }
     
     private String generateUniqueScopeName(String baseName) {

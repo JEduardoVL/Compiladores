@@ -8,4 +8,10 @@ public class ExprSet extends Expression{
         this.name = name;
         this.value = value;
     }
+
+    @Override
+    Object solve() {
+       
+        throw new UnsupportedOperationException("Unimplemented method 'solve'");
+    }
 }

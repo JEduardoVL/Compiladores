@@ -6,4 +6,10 @@ public class ExprSuper extends Expression {
         // this.keyword = keyword;
         this.method = method;
     }
+
+    @Override
+    Object solve() {
+        
+        throw new UnsupportedOperationException("Unimplemented method 'solve'");
+    }
 }
