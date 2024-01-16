@@ -9,9 +9,9 @@ import java.util.Stack;
 public class ASDR implements Program{
 
     private String nombreAlcanceActual;
-    private Stack<TablaSimbolos> stackTablasSimbolos;
-    private Map<String, TablaSimbolos> symbolTables; 
-
+    private Stack<String> scopeNamesStack = new Stack<>();
+    private Map<String, TablaSimbolos> symbolTables = new HashMap<>();
+   
     private int scopeCounter = 0;
 
 
@@ -20,113 +20,79 @@ public class ASDR implements Program{
     private Token preanalisis;
     private final List<Token> tokens;
 
-
-    /*public ASDR(List<Token> tokens) {
-        this.tokens = tokens;
-        preanalisis = this.tokens.get(i);
-    
-        stackTablasSimbolos = new Stack<>();
-        // Asegúrate de que siempre haya un alcance global
-        entrarNuevoAlcance("global");
-        TablaSimbolos tablaGlobal = new TablaSimbolos();
-        stackTablasSimbolos.push(tablaGlobal);
-        symbolTables = new HashMap<>();
-        symbolTables.put("global", tablaGlobal);
-    }*/
     public ASDR(List<Token> tokens) {
         this.tokens = tokens;
         preanalisis = this.tokens.get(i);
-    
-        stackTablasSimbolos = new Stack<>();
+
+        // Inicializar la tabla de símbolos global
         TablaSimbolos tablaGlobal = new TablaSimbolos();
-        stackTablasSimbolos.push(tablaGlobal);
-        // Inicializa el campo symbolTables
-        symbolTables = new HashMap<>();
+        scopeNamesStack.push("global");
         symbolTables.put("global", tablaGlobal);
-        // No es necesario crear un alcance 'global' adicional aquí
     }
     
     private String generateUniqueScopeName(String baseName) {
         return baseName + "_" + scopeCounter++;
     }
 
+
     public void entrarNuevoAlcance(String baseName) {
         String uniqueScopeName = generateUniqueScopeName(baseName);
-    
-        if (uniqueScopeName == null || uniqueScopeName.isEmpty()) {
-            throw new IllegalArgumentException("El nombre del alcance no puede ser nulo o vacío.");
-        }
-    
-        if (!symbolTables.containsKey(uniqueScopeName)) {
-            TablaSimbolos nuevaTabla = new TablaSimbolos();
-            symbolTables.put(uniqueScopeName, nuevaTabla);
-        } else {
-            // Esta línea no debería ser necesaria ya que estamos generando nombres únicos
-            throw new IllegalArgumentException("El alcance '" + uniqueScopeName + "' ya existe.");
-        }
-        nombreAlcanceActual = uniqueScopeName;
+        TablaSimbolos nuevaTabla = new TablaSimbolos();
+        symbolTables.put(uniqueScopeName, nuevaTabla);
+        scopeNamesStack.push(uniqueScopeName);
+        nombreAlcanceActual = uniqueScopeName; // Asegúrate de actualizar el alcance actual después de crear uno nuevo
     }
     
-
     public void salirAlcanceActual() {
-        if (!nombreAlcanceActual.equals("global")) {
-            // Elimina el alcance actual de la pila y del mapa
-            stackTablasSimbolos.pop();
-            symbolTables.remove(nombreAlcanceActual);
-    
-            // Actualiza el nombre del alcance actual al siguiente en la pila
-            if (!stackTablasSimbolos.isEmpty()) {
-                nombreAlcanceActual = stackTablasSimbolos.peek().getNombreAlcance();
-            } else {
-                nombreAlcanceActual = "global";
-            }
+        if (!scopeNamesStack.isEmpty() && !getCurrentScope().equals("global")) {
+            String scopeName = scopeNamesStack.pop();
+            symbolTables.remove(scopeName);
         } else {
-            throw new IllegalArgumentException("No se puede salir del alcance global.");
+            throw new RuntimeException("No se puede salir del alcance global."); // Cambiado de IllegalArgumentException a RuntimeException para mantener la consistencia
+        }
+        if (!scopeNamesStack.isEmpty()) {
+            nombreAlcanceActual = getCurrentScope(); // Actualiza el nombre del alcance actual al último en la pila
+        } else {
+            nombreAlcanceActual = "global"; // Si la pila está vacía, el alcance actual debe ser el global
         }
     }
+
+    
     
 
     private String getCurrentScope() {
-        if (!stackTablasSimbolos.isEmpty()) {
-            return stackTablasSimbolos.peek().getNombreAlcance();
+        if (!scopeNamesStack.isEmpty()) {
+            return scopeNamesStack.peek(); // Devuelve el nombre del alcance actual que está en la cima de la pila
         }
-        return "global";
+        return "global"; // Devuelve "global" si la pila está vacía
     }
     
-
-    private void agregarIdentificador(String identificador, Object valor, String nombreAlcance) {
-        TablaSimbolos tabla = symbolTables.get(nombreAlcance);
-        if (tabla != null) {
-            tabla.declare(identificador, valor);
-        } else {
-            // Si no se encuentra el alcance, es un error grave
-            throw new RuntimeException("Ámbito no encontrado: '" + nombreAlcance + "'.");
-        }
+    private void agregarIdentificador(String identificador, Object valor) {
+        TablaSimbolos currentTable = symbolTables.get(scopeNamesStack.peek());
+        currentTable.declare(identificador, valor);
     }
 
-    private boolean existeIdentificador(String identificador, String nombreAlcance) {
-        TablaSimbolos tablaActual = symbolTables.get(nombreAlcance);
-        if (tablaActual != null && tablaActual.isDeclared(identificador)) {
-            return true;
-        }
-        // Luego busca en el alcance global si es diferente del actual
-        if (!"global".equals(nombreAlcance)) {
-            TablaSimbolos tablaGlobal = symbolTables.get("global");
-            return tablaGlobal != null && tablaGlobal.isDeclared(identificador);
-        }
-        return false;
-    }
-
-
-    /*private Object obtener(String identificador) {
-        for (TablaSimbolos tabla : symbolTables.values()) {
-            try {
-                return tabla.obtener(identificador, getCurrentScope());
-            } catch (RuntimeException ignored) {
-                // La variable no está en este ámbito, continúa con el siguiente
+    private boolean existeIdentificador(String identificador) {
+        // Se busca desde el alcance actual hacia el alcance global
+        for (int i = scopeNamesStack.size() - 1; i >= 0; i--) {
+            String scopeName = scopeNamesStack.get(i);
+            TablaSimbolos scopeTable = symbolTables.get(scopeName);
+            if (scopeTable != null && scopeTable.isDeclared(identificador)) {
+                return true;
             }
         }
-        throw new RuntimeException("Variable no definida '" + identificador + "'.");
+        return false; // Si no se encuentra en ningún alcance
+    }
+
+    /*private Object obtener(String identificador) {
+        for (int i = scopeNamesStack.size() - 1; i >= 0; i--) {
+            String scopeName = scopeNamesStack.get(i);
+            TablaSimbolos scopeTable = symbolTables.get(scopeName);
+            if (scopeTable != null && scopeTable.isDeclared(identificador)) {
+                return scopeTable.get(identificador);
+            }
+        }
+        throw new RuntimeException("Variable no definida: " + identificador);
     }*/
 
     public boolean progra() {
@@ -145,7 +111,7 @@ public class ASDR implements Program{
         return false;
     }
 
-    private Statement declaration() throws ParserException {
+    /*private Statement declaration() throws ParserException {
         Statement result = null;
         while (true) {
             if (preanalisis.getTipo() == TipoToken.FUN) {
@@ -154,13 +120,29 @@ public class ASDR implements Program{
                 result = var_decl();
             } else if (checkStatementStart(preanalisis.getTipo())) {
                 result = statement();
-                result = declaration();
+                // Elimina la llamada recursiva innecesaria aquí
             } else {
-                break;
+                break; // Rompe el bucle si no es un inicio de declaración
             }
         }
         return result;
+    }*/
+    private List<Statement> declaration() throws ParserException {
+        List<Statement> declarations = new ArrayList<>();
+        while (true) {
+            if (preanalisis.getTipo() == TipoToken.FUN) {
+                declarations.add(fun_decl());
+            } else if (preanalisis.getTipo() == TipoToken.VAR) {
+                declarations.add(var_decl());
+            } else if (checkStatementStart(preanalisis.getTipo())) {
+                declarations.add(statement());
+            } else {
+                break; // Sale del bucle si no es un inicio de declaración
+            }
+        }
+        return declarations;
     }
+    
   
     private boolean checkStatementStart(TipoToken tipo) {
         // Retorna true si el tipo del token es el inicio de una sentencia
@@ -173,16 +155,6 @@ public class ASDR implements Program{
     return function(); 
 }
 
-    /*private Statement var_decl() throws ParserException {
-        match(TipoToken.VAR);
-        match(TipoToken.IDENTIFIER);
-        Token variableName = previous();
-        Expression initializer = var_init(); 
-        agregarIdentificador(variableName.getLexema(), null); 
-
-        match(TipoToken.SEMICOLON);
-        return new StmtVar(variableName, initializer);
-    }*/
     private Statement var_decl() throws ParserException {
         match(TipoToken.VAR);
         match(TipoToken.IDENTIFIER);
@@ -190,7 +162,7 @@ public class ASDR implements Program{
         Expression initializer = var_init();
     
         // Agrega el identificador a la tabla de símbolos global
-        agregarIdentificador(variableName.getLexema(), null, getCurrentScope());//agregarIdentificador(variableName.getLexema(), null); // Puedes asignar un valor inicial a null
+        agregarIdentificador(variableName.getLexema(), null);//agregarIdentificador(variableName.getLexema(), null); // Puedes asignar un valor inicial a null
     
         match(TipoToken.SEMICOLON);
         return new StmtVar(variableName, initializer);
@@ -206,7 +178,7 @@ public class ASDR implements Program{
 
     //////////////////////////////////// SENTENCIAS
 
-    private Statement statement() throws ParserException {
+    /*private Statement statement() throws ParserException {
         switch (preanalisis.getTipo()) {
             case IF:
                 return if_stmt(); 
@@ -232,11 +204,36 @@ public class ASDR implements Program{
             default:
                 throw new ParserException("Declaracion no valida. ");
         }
+    }*/
+    private Statement statement() throws ParserException {
+        // Asegúrate de que preanalisis no es nulo
+        if (preanalisis == null) {
+            throw new ParserException("Token inesperado: fin de entrada.");
+        }
+    
+        switch (preanalisis.getTipo()) {
+            case IF:
+                return if_stmt();
+            case FOR:
+                return for_stmt();
+            case PRINT:
+                return print_stmt();
+            case RETURN:
+                return return_stmt();
+            case WHILE:
+                return while_stmt();
+            case LEFT_BRACE:
+                return block();
+            default:
+                // Para todos los demás casos que comienzan una expresión
+                return expr_stmt();
+        }
     }
+    
 
     private Statement expr_stmt() throws ParserException {
         Expression expr = expression();
-        match(TipoToken.SEMICOLON);
+        match(TipoToken.SEMICOLON); 
         return new StmtExpression(expr);
     }
 
@@ -304,24 +301,25 @@ public class ASDR implements Program{
         match(TipoToken.LEFT_PAREN);
         Expression condition = expression();
         match(TipoToken.RIGHT_PAREN);
-
+    
         // Crear un nuevo alcance para el bloque if
         entrarNuevoAlcance("if-block");
         Statement thenBranch = statement();
-        //Statement elseBranch = else_statement();
-        // Salir del alcance del bloque if 
-        //salirAlcanceActual(getCurrentScope());
-        salirAlcanceActual();
+        salirAlcanceActual();  // Salir del alcance del bloque if
+    
         Statement elseBranch = else_statement();
         return new StmtIf(condition, thenBranch, elseBranch);
     }
+    
 
     private Statement else_statement() throws ParserException {
         if (preanalisis.getTipo() == TipoToken.ELSE) {
             match(TipoToken.ELSE);
             // Crear un nuevo alcance para el bloque else
             entrarNuevoAlcance("else-block");
-            return statement();
+            Statement elseBranch = statement();
+            salirAlcanceActual();  // Salir del alcance del bloque else
+            return elseBranch;
         }
         return null; // E
     }
@@ -362,7 +360,7 @@ public class ASDR implements Program{
         return new StmtLoop(condition, body);
     }
 
-    private StmtBlock block() throws ParserException {
+    /*private StmtBlock block() throws ParserException {
         match(TipoToken.LEFT_BRACE);
 
         // Crear un nuevo alcance para el bloque
@@ -376,54 +374,94 @@ public class ASDR implements Program{
         return new StmtBlock(statements);
     }
 
+    private StmtBlock block() throws ParserException {
+        match(TipoToken.LEFT_BRACE);
+    
+        // Crear un nuevo alcance para el bloque
+        entrarNuevoAlcance("block");
+        
+        List<Statement> statements = new ArrayList<>();
+        while (true) {
+            if (check(TipoToken.RIGHT_BRACE)) {
+                break; // Sale del bucle si encuentra el token RIGHT_BRACE
+            }
+            
+            // Asume que declaration() devuelve List<Statement>
+            List<Statement> newStatements = declaration(); 
+            if (newStatements != null) {
+                statements.addAll(newStatements); // Añade todos los Statement a la lista
+            }
+        }
+    
+        match(TipoToken.RIGHT_BRACE);
+        salirAlcanceActual(); // Salir del alcance del bloque
+        
+        return new StmtBlock(statements);
+    }
+    
+    
+
+    private boolean check(TipoToken tipo) {
+        if (preanalisis.getTipo() == tipo) {
+            return true;
+        }
+        return false;
+    }*/
+    private StmtBlock block() throws ParserException {
+        match(TipoToken.LEFT_BRACE);
+    
+        // Crear un nuevo alcance para el bloque
+        entrarNuevoAlcance("block");
+    
+        List<Statement> statements = new ArrayList<>();
+        while (!check(TipoToken.RIGHT_BRACE)) {
+            // Asume que declaration() devuelve una List<Statement>
+            List<Statement> newStatements = declaration();
+            if (newStatements != null) {
+                statements.addAll(newStatements); // Añade todos los Statement a la lista
+            }
+        }
+    
+        match(TipoToken.RIGHT_BRACE);
+        salirAlcanceActual(); // Salir del alcance del bloque
+    
+        return new StmtBlock(statements);
+    }
+    
     private boolean check(TipoToken tipo) {
         if (preanalisis.getTipo() == tipo) {
             return true;
         }
         return false;
     }
+    
+    
 
     //////////////////////////////Expresiones
 
     private Expression expression() throws ParserException{
-         Expression expr = assignment();
-        return expr;
+        return assignment();
     }
 
     private Expression assignment() throws ParserException{
         Expression expr = logic_or();
-        expr = assignment_opc(expr);
-        return expr;
+        return assignment_opc(expr);
     }
 
-
-    /*private Expression assignment_opc(Expression expr) throws ParserException {
-        if (preanalisis.getTipo() == TipoToken.EQUAL) {
-            match(TipoToken.EQUAL);
-            Token variableToken = previous();
-
-            if (!existeIdentificador(variableToken.getLexema())) {
-                throw new ParserException("Asignación a identificador no declarado: " + variableToken.getLexema());
-            }
-            Expression value = assignment(); 
-            expr = new ExprAssign(variableToken, value); 
-        }
-        return expr;
-    }*/
     private Expression assignment_opc(Expression expr) throws ParserException {
         if (preanalisis.getTipo() == TipoToken.EQUAL) {
             match(TipoToken.EQUAL);
             Token variableToken = previous();
             
             // Verifica si el identificador existe en la tabla de símbolos
-            if (!existeIdentificador(variableToken.getLexema(), null)) {
+            if (!existeIdentificador(variableToken.getLexema())) {
                 throw new ParserException("Asignación a identificador no declarado: " + variableToken.getLexema());
             }
             
             Expression value = assignment();
     
             // Asigna el valor a la variable en la tabla de símbolos
-            agregarIdentificador(variableToken.getLexema(), null, getCurrentScope());//agregarIdentificador(variableToken.getLexema(), value);
+            agregarIdentificador(variableToken.getLexema(), null);//agregarIdentificador(variableToken.getLexema(), value);
     
             expr = new ExprAssign(variableToken, value);
         }
@@ -435,12 +473,22 @@ public class ASDR implements Program{
         return logic_or_2(expr);
     }
     
-    private Expression logic_or_2(Expression expr) throws ParserException {
+    /*private Expression logic_or_2(Expression expr) throws ParserException {
         if (preanalisis.getTipo() == TipoToken.OR) {
             match(TipoToken.OR);
             Expression right = logic_and();
             expr = new ExprBinary(expr, new Token(TipoToken.OR, "or", null), right);
             return logic_or_2(expr);
+        }
+        return expr;
+    }*/
+
+    private Expression logic_or_2(Expression expr) throws ParserException {
+        while (preanalisis.getTipo() == TipoToken.OR) {
+            match(TipoToken.OR);
+            Expression right = logic_and();
+            expr = new ExprLogical(expr, new Token(TipoToken.OR, "or",null), right);
+            expr = logic_or_2(expr);
         }
         return expr;
     }
@@ -450,12 +498,21 @@ public class ASDR implements Program{
         return logic_and_2(expr);
     }
     
-    private Expression logic_and_2(Expression expr) throws ParserException {
+    /*private Expression logic_and_2(Expression expr) throws ParserException {
         if (preanalisis.getTipo() == TipoToken.AND) {
             match(TipoToken.AND);
             Expression right = equality();
             expr = new ExprBinary(expr, new Token(TipoToken.AND, "and", null), right);
             return logic_and_2(expr);
+        }
+        return expr;
+    }*/
+    private Expression logic_and_2(Expression expr) throws ParserException {
+        while (preanalisis.getTipo() == TipoToken.AND) {
+            match(TipoToken.AND);
+            Expression right = equality();
+            expr = new ExprLogical(expr, new Token(TipoToken.AND, "and", null), right);
+            expr = logic_and_2(expr);
         }
         return expr;
     }
@@ -471,6 +528,7 @@ public class ASDR implements Program{
             match(preanalisis.getTipo());
             Expression right = comparison();
             expr = new ExprBinary(expr, operator, right);
+            expr = equality_2(expr);
         }
         return expr;
     }
@@ -590,7 +648,7 @@ public class ASDR implements Program{
             case IDENTIFIER:
                 match(TipoToken.IDENTIFIER);
                 Token id = previous();
-                if (!existeIdentificador(id.getLexema(), null)) {
+                if (!existeIdentificador(id.getLexema())) {
                     throw new ParserException("Identificador no declarado: " + id.getLexema());
                 }
                 return new ExprVariable(id);
@@ -607,55 +665,34 @@ public class ASDR implements Program{
 
 ///////////////////////////Otras 
     
-/* 
-private Statement function() throws ParserException {
+/*private Statement function() throws ParserException {
     match(TipoToken.IDENTIFIER);
     Token functionName = previous();
+    String functionScope = generateUniqueScopeName(functionName.getLexema());
 
-    // Registra la función en la tabla de símbolos global
-    agregarIdentificador(functionName.getLexema(), null, getCurrentScope());//agregarIdentificador(functionName.getLexema(), null); // Puedes asignar un valor inicial a null
+    // Siempre crea un nuevo alcance para la función
+    entrarNuevoAlcance(functionScope);
+
+    // Registra la función en la tabla de símbolos del alcance actual
+    agregarIdentificador(functionName.getLexema(), null);
 
     match(TipoToken.LEFT_PAREN);
     List<Token> parameters = parameters_opc();
     match(TipoToken.RIGHT_PAREN);
-    StmtBlock body = block();
-    return new StmtFunction(functionName, parameters, body);
-}*/
-private Statement function() throws ParserException {
-    match(TipoToken.IDENTIFIER);
-    Token functionName = previous();
-    String functionScope = functionName.getLexema(); // Utiliza el nombre de la función como nombre del alcance
 
-    // Verificar si estamos en el alcance de la función actual
-    if (!functionScope.equals(getCurrentScope())) {
-        // Crear un nuevo alcance en la tabla de símbolos solo si no estamos ya en el alcance de la función
-        entrarNuevoAlcance(functionScope);
-
-        // Registra la función en la tabla de símbolos global
-        agregarIdentificador(functionScope, null, getCurrentScope());
-    }
-
-    match(TipoToken.LEFT_PAREN);
-    List<Token> parameters = parameters_opc();
-    match(TipoToken.RIGHT_PAREN);
-    
-    // Ahora debes manejar los parámetros de la función en el alcance actual
+    // Maneja los parámetros de la función en el alcance actual
     for (Token parameter : parameters) {
         String paramName = parameter.getLexema();
-        // Agrega cada parámetro al alcance actual (la función)
-        agregarIdentificador(paramName, null, getCurrentScope());
+        agregarIdentificador(paramName, null);
     }
-    
+
     StmtBlock body = block();
 
-    // Verificar si estamos en el alcance de la función actual
-    if (!functionScope.equals(getCurrentScope())) {
-        salirAlcanceActual();
-    }
+    // Siempre sale del alcance de la función después de procesar su cuerpo
+    salirAlcanceActual();
 
     return new StmtFunction(functionName, parameters, body);
 }
-
 
 private List<Token> parameters_opc() throws ParserException {
     if (preanalisis.getTipo() != TipoToken.RIGHT_PAREN) {
@@ -664,21 +701,6 @@ private List<Token> parameters_opc() throws ParserException {
     return Collections.emptyList(); // E
 }
 
-/*private List<Token> parameters() throws ParserException {
-    List<Token> params = new ArrayList<>();
-    if (preanalisis.getTipo() == TipoToken.IDENTIFIER) {
-        do {
-            match(TipoToken.IDENTIFIER);
-            Token paramToken = previous();
-
-            // Registra el parámetro en la tabla de símbolos de la función actual
-            agregarIdentificador(paramToken.getLexema(), null); // Puedes asignar un valor inicial a null
-            params.add(paramToken);
-            params = parameters_2(params);
-        } while (preanalisis.getTipo() == TipoToken.COMMA);
-    }
-    return params;
-}*/
 private List<Token> parameters() throws ParserException {
     List<Token> params = new ArrayList<>();
     if (preanalisis.getTipo() == TipoToken.IDENTIFIER) {
@@ -687,7 +709,7 @@ private List<Token> parameters() throws ParserException {
             Token paramToken = previous();
 
             // Registra el parámetro en la tabla de símbolos de la función actual
-            agregarIdentificador(paramToken.getLexema(), null, getCurrentScope());
+            agregarIdentificador(paramToken.getLexema(), null);
 
             params.add(paramToken);
             params = parameters_2(params);
@@ -723,21 +745,78 @@ private List<Expression> arguments() throws ParserException {
         } while (preanalisis.getTipo() != TipoToken.RIGHT_PAREN);
     }
     return args;
+}*/
+
+private Statement function() throws ParserException {
+    match(TipoToken.IDENTIFIER);
+    Token functionName = previous();
+    String functionScope = generateUniqueScopeName(functionName.getLexema());
+
+    // Siempre crea un nuevo alcance para la función
+    entrarNuevoAlcance(functionScope);
+
+    // Registra la función en la tabla de símbolos del alcance actual
+    agregarIdentificador(functionName.getLexema(), null);
+
+    match(TipoToken.LEFT_PAREN);
+    List<Token> parameters = parameters_opc();
+    match(TipoToken.RIGHT_PAREN);
+
+    // Maneja los parámetros de la función en el alcance actual
+    for (Token parameter : parameters) {
+        String paramName = parameter.getLexema();
+        agregarIdentificador(paramName, null);
+    }
+
+    StmtBlock body = block();
+
+    // Siempre sale del alcance de la función después de procesar su cuerpo
+    salirAlcanceActual();
+
+    return new StmtFunction(functionName, parameters, body);
 }
-   
-    /*private void match(TipoToken tt) throws ParserException {
-        if(preanalisis.getTipo() ==  tt){
-            i++;
-            preanalisis = tokens.get(i);
+
+private List<Token> parameters_opc() throws ParserException {
+    if (preanalisis.getTipo() != TipoToken.RIGHT_PAREN) {
+        return parameters();
+    }
+    return Collections.emptyList(); // E
+}
+
+private List<Token> parameters() throws ParserException {
+    List<Token> params = new ArrayList<>();
+    while (preanalisis.getTipo() == TipoToken.IDENTIFIER) {
+        params.add(previous());
+        match(TipoToken.IDENTIFIER);
+        if (preanalisis.getTipo() == TipoToken.COMMA) {
+            match(TipoToken.COMMA);
+        } else {
+            break;
         }
-        else{
-            String message = "Error en la línea " +
-                    preanalisis.getPosicion() +  // .getLine()
-                    ". Se esperaba " + preanalisis.getTipo() +
-                    " pero se encontró " + tt;
-            throw new ParserException(message);
+    }
+    return params;
+}
+
+private List<Expression> arguments_opc() throws ParserException {
+    if (preanalisis.getTipo() != TipoToken.RIGHT_PAREN) {
+        return arguments();
+    }
+    return Collections.emptyList(); // E
+}
+
+private List<Expression> arguments() throws ParserException {
+    List<Expression> args = new ArrayList<>();
+    while (preanalisis.getTipo() != TipoToken.RIGHT_PAREN) {
+        args.add(expression());
+        if (preanalisis.getTipo() == TipoToken.COMMA) {
+            match(TipoToken.COMMA);
+        } else {
+            break;
         }
-    }*/
+    }
+    return args;
+}
+
 
     private void match(TipoToken tt) throws ParserException {
         if (preanalisis.getTipo() == tt) {
