@@ -12,8 +12,9 @@ public class StmtFor extends Statement {
     }
 
     @Override
-    void execute() {
-       
-        throw new UnsupportedOperationException("Unimplemented method 'execute'");
+    void solve(TablaSimbolos tabla) {
+        throw new UnsupportedOperationException("Unimplemented method 'solve'");
     }
+
+  
 }

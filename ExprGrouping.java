@@ -14,9 +14,10 @@ public class ExprGrouping extends Expression {
     }
 
     @Override
-    public Object solve() {
+    public Object solve(TablaSimbolos tabla) {
         // Resolver la expresión interna y devolver su resultado
-        return expression.solve();
+        // Pasando la tabla de símbolos para permitir la resolución de cualquier variable o función
+        return expression.solve(tabla);
     }
 
     @Override

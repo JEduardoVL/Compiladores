@@ -25,14 +25,16 @@ public class Token {
             return false;
         }
 
-        Token otherToken = (Token) o;
-        return this.tipo == otherToken.tipo;
+        if(this.tipo == ((Token)o).tipo){
+            return true;
+        }
+
+        return false;
     }
 
 
-    @Override
     public String toString() {
-        return tipo + " " + lexema + " " + (literal == null ? "" : literal.toString());
+        return "<" + tipo + " " + lexema + " " + literal + ">";
     }
 
 

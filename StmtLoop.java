@@ -6,6 +6,19 @@
         this.condition = condition;
         this.body = body;
     }
+
+    @Override
+    void solve(TablaSimbolos tabla) {
+        // Evalúa la condición y ejecuta el cuerpo del bucle mientras la condición sea verdadera
+        while ((Boolean) condition.solve(tabla)) {
+            body.solve(tabla);
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "while (" + condition + ") " + body;
+    }
 }*/
 
 public class StmtLoop extends Statement {
@@ -18,15 +31,20 @@ public class StmtLoop extends Statement {
     }
 
     @Override
-    public void execute() {
-        // Evalúa la condición y ejecuta el cuerpo del bucle mientras la condición sea verdadera
-        while ((Boolean) condition.solve()) {
-            body.execute();
-        }
+    public String toString() {
+        return "while( " + condition + " )" + body;
     }
 
     @Override
-    public String toString() {
-        return "while (" + condition + ") " + body;
+    void solve(TablaSimbolos tabla) {
+        try {
+            while ((boolean) condition.solve(tabla)) {
+                body.solve(tabla);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("Error semantico: estructura del bucle");
+        }
     }
 }
+
+

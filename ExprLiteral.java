@@ -1,16 +1,3 @@
-/*class ExprLiteral extends Expression {
-    final Object value;
-
-    ExprLiteral(Object value) {
-        this.value = value;
-    }
-
-    public Object solve() {
-        return this.value;
-    }
-}
-*/
-
 class ExprLiteral extends Expression {
     final Object value;
 
@@ -19,9 +6,11 @@ class ExprLiteral extends Expression {
     }
 
     @Override
-    public Object solve() {
+    public Object solve(TablaSimbolos tabla) {
         // Devuelve directamente el valor del literal.
         // Dado que es un literal, no necesita realizar ninguna operación adicional.
+        // La tabla de símbolos se incluye por consistencia con la estructura de la clase padre,
+        // pero no se usa en este caso.
         return this.value;
     }
 

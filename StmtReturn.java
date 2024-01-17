@@ -1,11 +1,3 @@
-/*public class StmtReturn extends Statement {
-    final Expression value;
-
-    StmtReturn(Expression value) {
-        this.value = value;
-    }
-}*/
-
 public class StmtReturn extends Statement {
     final Expression value;
 
@@ -14,13 +6,21 @@ public class StmtReturn extends Statement {
     }
 
     @Override
-    public void execute() {
-        // Evalúa la expresión y lanza una excepción personalizada con el valor de retorno
-        Object returnValue = value.solve();
-        throw new Return(returnValue);
+    public String toString() {
+        return "return " + value +";\n";
+    }
+
+    @Override
+    void solve(TablaSimbolos tabla){
+        TablaSimbolos tablaReturn;
+        if(tabla.existeIdentificador("return")){
+            tablaReturn = tabla.obtenerTabla("return", tabla);
+            tablaReturn.asignar("return", value.solve(tablaReturn));
+        }
+        else
+            throw new RuntimeException("Error semantico: uso incorrecto de return");
     }
 }
-
 
 /*
  * 

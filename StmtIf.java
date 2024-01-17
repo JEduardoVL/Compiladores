@@ -1,15 +1,3 @@
-/*public class StmtIf extends Statement {
-    final Expression condition;
-    final Statement thenBranch;
-    final Statement elseBranch;
-
-    StmtIf(Expression condition, Statement thenBranch, Statement elseBranch) {
-        this.condition = condition;
-        this.thenBranch = thenBranch;
-        this.elseBranch = elseBranch;
-    }
-}*/
-
 public class StmtIf extends Statement {
     final Expression condition;
     final Statement thenBranch;
@@ -22,15 +10,14 @@ public class StmtIf extends Statement {
     }
 
     @Override
-    public void execute() {
-        // Evalúa la condición
-        boolean conditionValue = (Boolean) condition.solve();
-
-        // Ejecuta la rama correspondiente según el resultado de la condición
-        if (conditionValue) {
-            thenBranch.execute();
-        } else if (elseBranch != null) {
-            elseBranch.execute();
+    void solve(TablaSimbolos tabla) {
+        try {
+            if ((boolean) condition.solve(tabla))
+                thenBranch.solve(tabla);
+            else if (elseBranch != null)
+                elseBranch.solve(tabla);
+        } catch (Exception e) {
+            throw new RuntimeException("Error semantico: estructura de la condicional.");
         }
     }
 
@@ -43,4 +30,3 @@ public class StmtIf extends Statement {
         return result;
     }
 }
-

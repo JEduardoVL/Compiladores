@@ -1,6 +1,6 @@
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
+//import java.util.Collections;
 //import java.util.HashMap;
 import java.util.List;
 //import java.util.Map;
@@ -8,27 +8,29 @@ import java.util.List;
 
 public class ASDR implements Program{
 
-    private static ASDR instance;
+    //private static ASDR instance;
     private int i = 0;
     private Token preanalisis;
     private final List<Token> tokens;
-   // private List<Statement> declaraciones;
+    private List<Statement> declaracionesm = new ArrayList<>();
+
+   // Método estático para obtener la instancia
+   /*public static ASDR getInstance(List<Token> tokens) {
+    if (instance == null) {
+        instance = new ASDR(tokens);
+    }
+    return instance;
+}*/
 
     public ASDR(List<Token> tokens) {
         this.tokens = tokens;
         preanalisis = this.tokens.get(i);
-        TablaSimbolos.getInstance().enterNewScope("global");
+        //TablaSimbolos.getInstance().enterNewScope("global");
     }
 
-    // Método estático para obtener la instancia
-    public static ASDR getInstance(List<Token> tokens) {
-        if (instance == null) {
-            instance = new ASDR(tokens);
-        }
-        return instance;
-    }
+    
 
-    public void entrarNuevoAlcance(String baseName) {
+   /*  public void entrarNuevoAlcance(String baseName) {
         TablaSimbolos.getInstance().enterNewScope(baseName);
     }
 
@@ -42,54 +44,48 @@ public class ASDR implements Program{
 
     private boolean existeIdentificador(String identificador) {
         return TablaSimbolos.getInstance().isDeclared(identificador);
-    }
+    }*/
 
     @Override
-public List<Statement> progra() {
-    List<Statement> statements = new ArrayList<>();
-    try {
-        while (!isAtEnd()) {
-            Statement stmt = declaration();  // Puede lanzar ParserException
-            if (stmt != null) {
-                statements.add(stmt);
-            }
+    public List<Statement> progra() throws ParserException {
+        program();
+        if(preanalisis.tipo == TipoToken.EOF ){
+            System.out.println("La sintaxis es correcta");
+            return  declaracionesm;
+        }else {
+            System.out.println("Se encontraron errores");
         }
-    } catch (ParserException e) {
-        System.out.println("Error de parseo: " + e.getMessage());
-        return null; // O manejar de otra manera
-    }
-    if (preanalisis.tipo == TipoToken.EOF) {
-        return statements;
-    } else {
-        System.out.println("Se encontraron errores ASDR");
         return null;
     }
-}
 
-    private boolean isAtEnd() {
-        return preanalisis.tipo == TipoToken.EOF;
+    public List<Statement> program() throws ParserException{
+            return declaration(declaracionesm);
     }
 
-    private Statement declaration() throws ParserException {
+    private List<Statement>declaration(List<Statement>declarations)throws ParserException {
         // Aquí asumimos que preanalisis es el token actual y avanza con cada llamada
         if (preanalisis.getTipo() == TipoToken.FUN) {
-            return fun_decl();
+            //return fun_decl();
+            declarations.add(fun_decl());
+            declaration(declarations);
         } else if (preanalisis.getTipo() == TipoToken.VAR) {
-            return var_decl();
+            //return var_decl();
+            declarations.add(var_decl()); // Gestiona la declaración de una variable
+            declaration(declarations); 
         } else if (checkStatementStart(preanalisis.getTipo())) {
-            return statement();
-        } else {
-            // Devuelve null o lanza una excepción si no es una declaración válida
-            // Puede ser necesario ajustar esto según tu lógica de análisis sintáctico
-            return declaration();
+            //return statement();
+            declarations.add(statement());
+            declaration(declarations);
         }
+        return declarations;
     }
     
   
     private boolean checkStatementStart(TipoToken tipo) {
         // Retorna true si el tipo del token es el inicio de una sentencia
-        return tipo == TipoToken.IF || tipo == TipoToken.FOR || tipo == TipoToken.PRINT
-               || tipo == TipoToken.RETURN || tipo == TipoToken.WHILE || tipo == TipoToken.LEFT_BRACE;
+        return tipo == TipoToken.BANG || tipo == TipoToken.MINUS || tipo == TipoToken.FALSE|| tipo == TipoToken.NULL|| tipo == TipoToken.STRING ||
+        tipo == TipoToken.IDENTIFIER || tipo == TipoToken.FOR || tipo == TipoToken.IF || tipo == TipoToken.RETURN || tipo == TipoToken.WHILE ||
+        tipo == TipoToken.TRUE || tipo == TipoToken.NUMBER || tipo == TipoToken.LEFT_PAREN || tipo == TipoToken.PRINT || tipo == TipoToken.LEFT_BRACE;
     }
 
     private Statement fun_decl() throws ParserException {
@@ -104,7 +100,7 @@ public List<Statement> progra() {
         Expression initializer = var_init();
     
         // Agrega el identificador a la tabla de símbolos global
-        agregarIdentificador(variableName.getLexema(), null);//agregarIdentificador(variableName.getLexema(), null); // Puedes asignar un valor inicial a null
+        //agregarIdentificador(variableName.getLexema(), null);//agregarIdentificador(variableName.getLexema(), null); // Puedes asignar un valor inicial a null
     
         match(TipoToken.SEMICOLON);
         return new StmtVar(variableName, initializer);
@@ -184,7 +180,7 @@ public List<Statement> progra() {
     match(TipoToken.FOR);
     match(TipoToken.LEFT_PAREN);
     // Crear un nuevo alcance para el bucle for
-    entrarNuevoAlcance("for-loop");
+    //entrarNuevoAlcance("for-loop");
 
     Statement initialization = for_stmt_1();
     Expression condition = for_stmt_2();
@@ -194,7 +190,7 @@ public List<Statement> progra() {
     Statement body = statement();
     // Salir del alcance del bucle for
     //salirAlcanceActual(getCurrentScope());
-    salirAlcanceActual();
+    //salirAlcanceActual();
     if (initialization != null) {
         if (increment != null) {
             body = new StmtBlock(Arrays.asList(body, new StmtExpression(increment)));
@@ -211,11 +207,12 @@ public List<Statement> progra() {
     private Statement for_stmt_1() throws ParserException {
         if (preanalisis.getTipo() == TipoToken.VAR) {
             return var_decl(); 
-        } else if (preanalisis.getTipo() != TipoToken.SEMICOLON) {
-            return expr_stmt();
-        } else {
+        } else if (preanalisis.getTipo() == TipoToken.SEMICOLON) {
             match(TipoToken.SEMICOLON);
-            return null; 
+            return null;
+        } else {
+            //match(TipoToken.SEMICOLON);
+            return expr_stmt(); 
         }
     }
     
@@ -245,9 +242,9 @@ public List<Statement> progra() {
         match(TipoToken.RIGHT_PAREN);
     
         // Crear un nuevo alcance para el bloque if
-        entrarNuevoAlcance("if-block");
+        //entrarNuevoAlcance("if-block");
         Statement thenBranch = statement();
-        salirAlcanceActual();  // Salir del alcance del bloque if
+        //salirAlcanceActual();  // Salir del alcance del bloque if
     
         Statement elseBranch = else_statement();
         return new StmtIf(condition, thenBranch, elseBranch);
@@ -258,10 +255,10 @@ public List<Statement> progra() {
         if (preanalisis.getTipo() == TipoToken.ELSE) {
             match(TipoToken.ELSE);
             // Crear un nuevo alcance para el bloque else
-            entrarNuevoAlcance("else-block");
-            Statement elseBranch = statement();
-            salirAlcanceActual();  // Salir del alcance del bloque else
-            return elseBranch;
+            //entrarNuevoAlcance("else-block");
+            //Statement elseBranch = statement();
+            //salirAlcanceActual();  // Salir del alcance del bloque else
+            return statement();
         }
         return null; // E
     }
@@ -280,8 +277,16 @@ public List<Statement> progra() {
         return new StmtReturn(value);
     }
 
+    private boolean checkStatementStartV2(TipoToken tipo) {
+        // Retorna true si el tipo del token es el inicio de una sentencia
+        return tipo == TipoToken.BANG || tipo == TipoToken.MINUS || tipo == TipoToken.FALSE|| tipo == TipoToken.NULL|| tipo == TipoToken.STRING ||
+        tipo == TipoToken.IDENTIFIER  ||
+        tipo == TipoToken.TRUE || tipo == TipoToken.NUMBER || tipo == TipoToken.LEFT_PAREN;
+    }
+
+
     private Expression return_exp_opc() throws ParserException {
-        if (preanalisis.getTipo() != TipoToken.SEMICOLON) {
+        if (checkStatementStartV2(preanalisis.getTipo())) {
             return expression();
         }
         return null; // E
@@ -293,92 +298,21 @@ public List<Statement> progra() {
         Expression condition = expression();
         match(TipoToken.RIGHT_PAREN);
         // Crear un nuevo alcance para el bloque while
-        entrarNuevoAlcance("while-block");
+        //entrarNuevoAlcance("while-block");
         Statement body = statement();
         // Salir del alcance del bloque while
         //salirAlcanceActual(getCurrentScope());
-        salirAlcanceActual();
+        //salirAlcanceActual();
 
         return new StmtLoop(condition, body);
     }
 
-    /*private StmtBlock block() throws ParserException {
-        match(TipoToken.LEFT_BRACE);
-
-        // Crear un nuevo alcance para el bloque
-        entrarNuevoAlcance("block");
-        List<Statement> statements = new ArrayList<>();
-        while (!check(TipoToken.RIGHT_BRACE) && !check(TipoToken.EOF)) {
-            statements.add(declaration());
-        }
-        match(TipoToken.RIGHT_BRACE);
-        salirAlcanceActual();
-        return new StmtBlock(statements);
-    }
-
     private StmtBlock block() throws ParserException {
-        match(TipoToken.LEFT_BRACE);
-    
-        // Crear un nuevo alcance para el bloque
-        entrarNuevoAlcance("block");
-        
-        List<Statement> statements = new ArrayList<>();
-        while (true) {
-            if (check(TipoToken.RIGHT_BRACE)) {
-                break; // Sale del bucle si encuentra el token RIGHT_BRACE
-            }
-            
-            // Asume que declaration() devuelve List<Statement>
-            List<Statement> newStatements = declaration(); 
-            if (newStatements != null) {
-                statements.addAll(newStatements); // Añade todos los Statement a la lista
-            }
-        }
-    
+        List<Statement> declarations = new ArrayList<>();
+        declaration(declarations);
         match(TipoToken.RIGHT_BRACE);
-        salirAlcanceActual(); // Salir del alcance del bloque
-        
-        return new StmtBlock(statements);
+        return new StmtBlock(declarations);
     }
-    
-    
-
-    private boolean check(TipoToken tipo) {
-        if (preanalisis.getTipo() == tipo) {
-            return true;
-        }
-        return false;
-    }*/
-    private StmtBlock block() throws ParserException {
-        match(TipoToken.LEFT_BRACE);
-    
-        // Crear un nuevo alcance para el bloque
-        entrarNuevoAlcance("block");
-    
-        List<Statement> statements = new ArrayList<>();
-        while (!check(TipoToken.RIGHT_BRACE)) {
-            // Asume que declaration() devuelve un Statement
-            Statement newStatement = declaration();
-            if (newStatement != null) {
-                statements.add(newStatement); // Añade el Statement a la lista
-            }
-        }
-    
-        match(TipoToken.RIGHT_BRACE);
-        salirAlcanceActual(); // Salir del alcance del bloque
-    
-        return new StmtBlock(statements);
-    }
-    
-    
-    private boolean check(TipoToken tipo) {
-        if (preanalisis.getTipo() == tipo) {
-            return true;
-        }
-        return false;
-    }
-    
-    
 
     //////////////////////////////Expresiones
 
@@ -392,48 +326,32 @@ public List<Statement> progra() {
     }
 
     private Expression assignment_opc(Expression expr) throws ParserException {
-        if (preanalisis.getTipo() == TipoToken.EQUAL) {
-            match(TipoToken.EQUAL);
-            Token variableToken = previous();
-            
-            // Verifica si el identificador existe en la tabla de símbolos
-            if (!existeIdentificador(variableToken.getLexema())) {
-                throw new ParserException("Asignación a identificador no declarado: " + variableToken.getLexema());
-            }
-            
-            Expression value = assignment();
-    
-            // Asigna el valor a la variable en la tabla de símbolos
-            agregarIdentificador(variableToken.getLexema(), null);//agregarIdentificador(variableToken.getLexema(), value);
-    
-            expr = new ExprAssign(variableToken, value);
+        switch (preanalisis.tipo) {
+            case EQUAL:
+                match(TipoToken.EQUAL);
+                return new ExprAssign(((ExprVariable) expr).name, expression());
+            default:
+                return expr;
         }
-        return expr;
     }
+    
 
      private Expression logic_or() throws ParserException {
         Expression expr = logic_and();
         return logic_or_2(expr);
     }
-    
-    /*private Expression logic_or_2(Expression expr) throws ParserException {
-        if (preanalisis.getTipo() == TipoToken.OR) {
-            match(TipoToken.OR);
-            Expression right = logic_and();
-            expr = new ExprBinary(expr, new Token(TipoToken.OR, "or", null), right);
-            return logic_or_2(expr);
-        }
-        return expr;
-    }*/
 
     private Expression logic_or_2(Expression expr) throws ParserException {
-        while (preanalisis.getTipo() == TipoToken.OR) {
-            match(TipoToken.OR);
-            Expression right = logic_and();
-            expr = new ExprLogical(expr, new Token(TipoToken.OR, "or",null), right);
-            expr = logic_or_2(expr);
+        switch (preanalisis.tipo) {
+            case OR:
+                Token operador = preanalisis;
+                match(preanalisis.tipo);
+                Expression right = logic_and();
+                expr = new ExprLogical(expr, operador, right);
+                return logic_or_2(expr);
+            default:
+                return expr; 
         }
-        return expr;
     }
 
     private Expression logic_and() throws ParserException {
@@ -441,23 +359,18 @@ public List<Statement> progra() {
         return logic_and_2(expr);
     }
     
-    /*private Expression logic_and_2(Expression expr) throws ParserException {
-        if (preanalisis.getTipo() == TipoToken.AND) {
-            match(TipoToken.AND);
-            Expression right = equality();
-            expr = new ExprBinary(expr, new Token(TipoToken.AND, "and", null), right);
-            return logic_and_2(expr);
-        }
-        return expr;
-    }*/
+
     private Expression logic_and_2(Expression expr) throws ParserException {
-        while (preanalisis.getTipo() == TipoToken.AND) {
-            match(TipoToken.AND);
-            Expression right = equality();
-            expr = new ExprLogical(expr, new Token(TipoToken.AND, "and", null), right);
-            expr = logic_and_2(expr);
+        switch (preanalisis.tipo) {
+            case AND:
+                Token operador = preanalisis;
+                match(preanalisis.tipo);
+                Expression right = equality();
+                expr = new ExprLogical(expr, operador, right);
+                return logic_and_2(expr);
+            default:
+                return expr; 
         }
-        return expr;
     }
 
     private Expression equality() throws ParserException {
@@ -471,7 +384,7 @@ public List<Statement> progra() {
             match(preanalisis.getTipo());
             Expression right = comparison();
             expr = new ExprBinary(expr, operator, right);
-            expr = equality_2(expr);
+            return equality_2(expr);
         }
         return expr;
     }
@@ -487,7 +400,8 @@ public List<Statement> progra() {
             Token operator = preanalisis;
             match(preanalisis.getTipo());
             Expression right = term();
-            expr = new ExprBinary(expr, operator, right);
+            expr = new ExprLogical(expr, operator, right);
+            return comparison_2(expr);
         }
         return expr;
     }
@@ -498,11 +412,21 @@ public List<Statement> progra() {
     }
 
     private Expression term_2(Expression expr) throws ParserException {
-        while (preanalisis.getTipo() == TipoToken.MINUS || preanalisis.getTipo() == TipoToken.PLUS) {
-            Token operator = preanalisis;
-            match(preanalisis.getTipo());
-            Expression right = factor();
-            expr = new ExprBinary(expr, operator, right);
+        switch (preanalisis.tipo){
+            case MINUS:
+                match(TipoToken.MINUS);
+                Token operador = previous();
+                Expression expr2 = factor();
+                ExprBinary expb = new ExprBinary(expr, operador, expr2);
+                return term_2(expb);
+            case PLUS:
+                match(TipoToken.PLUS);
+                operador = previous();
+                expr2 = factor();
+                expb = new ExprBinary(expr, operador, expr2);
+                return term_2(expb);
+            default:
+                break;
         }
         return expr;
     }
@@ -526,6 +450,7 @@ public List<Statement> progra() {
                 operador = previous();
                 expr2 = unary();
                 expb = new ExprBinary(expr, operador, expr2);
+                return factor2(expb);
             default:
                 
         }
@@ -564,7 +489,7 @@ public List<Statement> progra() {
                 ExprCallFunction ecf = new ExprCallFunction(expr, lstArguments);
                 return call2(ecf);
             default:
-            // algo no esperado
+                break;
         }
         return expr;
     }
@@ -591,9 +516,9 @@ public List<Statement> progra() {
             case IDENTIFIER:
                 match(TipoToken.IDENTIFIER);
                 Token id = previous();
-                if (!existeIdentificador(id.getLexema())) {
+                /*if (!existeIdentificador(id.getLexema())) {
                     throw new ParserException("Identificador no declarado: " + id.getLexema());
-                }
+                }*/
                 return new ExprVariable(id);
             case LEFT_PAREN:
                 match(TipoToken.LEFT_PAREN);
@@ -601,165 +526,83 @@ public List<Statement> progra() {
                 match(TipoToken.RIGHT_PAREN);
                 return new ExprGrouping(expr);
             default:
-            //Algo diferente de lo anterior
+                System.out.println("Se esperaba TRUE, FALSE, NULL, NUMBER, STRING, IDENTIFIER, LEFT_PAREN");
+                break;
         }
         return null;
     }
 
 ///////////////////////////Otras 
     
-/*private Statement function() throws ParserException {
-    match(TipoToken.IDENTIFIER);
-    Token functionName = previous();
-    String functionScope = generateUniqueScopeName(functionName.getLexema());
-
-    // Siempre crea un nuevo alcance para la función
-    entrarNuevoAlcance(functionScope);
-
-    // Registra la función en la tabla de símbolos del alcance actual
-    agregarIdentificador(functionName.getLexema(), null);
-
-    match(TipoToken.LEFT_PAREN);
-    List<Token> parameters = parameters_opc();
-    match(TipoToken.RIGHT_PAREN);
-
-    // Maneja los parámetros de la función en el alcance actual
-    for (Token parameter : parameters) {
-        String paramName = parameter.getLexema();
-        agregarIdentificador(paramName, null);
-    }
-
-    StmtBlock body = block();
-
-    // Siempre sale del alcance de la función después de procesar su cuerpo
-    salirAlcanceActual();
-
-    return new StmtFunction(functionName, parameters, body);
-}
-
-private List<Token> parameters_opc() throws ParserException {
-    if (preanalisis.getTipo() != TipoToken.RIGHT_PAREN) {
-        return parameters();
-    }
-    return Collections.emptyList(); // E
-}
-
-private List<Token> parameters() throws ParserException {
-    List<Token> params = new ArrayList<>();
-    if (preanalisis.getTipo() == TipoToken.IDENTIFIER) {
-        do {
-            match(TipoToken.IDENTIFIER);
-            Token paramToken = previous();
-
-            // Registra el parámetro en la tabla de símbolos de la función actual
-            agregarIdentificador(paramToken.getLexema(), null);
-
-            params.add(paramToken);
-            params = parameters_2(params);
-        } while (preanalisis.getTipo() == TipoToken.COMMA);
-    }
-    return params;
-}
-
-private List<Token> parameters_2(List<Token> existingParams) throws ParserException {
-    while (preanalisis.getTipo() == TipoToken.COMMA) {
-        match(TipoToken.COMMA);
-        match(TipoToken.IDENTIFIER);
-        existingParams.add(previous());
-    }
-    return existingParams;
-}
-
-private List<Expression> arguments_opc() throws ParserException {
-    if (preanalisis.getTipo() != TipoToken.RIGHT_PAREN) {
-        return arguments();
-    }
-    return Collections.emptyList(); // E
-}
-
-private List<Expression> arguments() throws ParserException {
-    List<Expression> args = new ArrayList<>();
-    if (preanalisis.getTipo() != TipoToken.RIGHT_PAREN) {
-        do {
-            args.add(expression());
-            if (preanalisis.getTipo() == TipoToken.COMMA) {
-                match(TipoToken.COMMA);
-            }
-        } while (preanalisis.getTipo() != TipoToken.RIGHT_PAREN);
-    }
-    return args;
-}*/
 
 private Statement function() throws ParserException {
     match(TipoToken.IDENTIFIER);
     Token functionName = previous();
-    //String functionScope = generateUniqueScopeName(functionName.getLexema());
-
-    // Siempre crea un nuevo alcance para la función
-    //entrarNuevoAlcance(functionScope);
-    entrarNuevoAlcance(functionName.getLexema());
-        agregarIdentificador(functionName.getLexema(), null); 
-    // Registra la función en la tabla de símbolos del alcance actual
-   // agregarIdentificador(functionName.getLexema(), null);
+    
+    /*entrarNuevoAlcance(functionName.getLexema());
+        agregarIdentificador(functionName.getLexema(), null); */
+   
 
     match(TipoToken.LEFT_PAREN);
     List<Token> parameters = parameters_opc();
     match(TipoToken.RIGHT_PAREN);
 
-    // Maneja los parámetros de la función en el alcance actual
-    for (Token parameter : parameters) {
+   
+    /*for (Token parameter : parameters) {
         String paramName = parameter.getLexema();
         agregarIdentificador(paramName, null);
-    }
+    }*/
 
     StmtBlock body = block();
 
-    // Siempre sale del alcance de la función después de procesar su cuerpo
-    salirAlcanceActual();
+    //salirAlcanceActual();
 
     return new StmtFunction(functionName, parameters, body);
 }
 
 private List<Token> parameters_opc() throws ParserException {
-    if (preanalisis.getTipo() != TipoToken.RIGHT_PAREN) {
+    if(preanalisis.tipo == TipoToken.IDENTIFIER) { // Si hay un identificador, se procesan los parámetros.
         return parameters();
-    }
-    return Collections.emptyList(); // E
+     }
+     return null;
 }
 
 private List<Token> parameters() throws ParserException {
-    List<Token> params = new ArrayList<>();
-    while (preanalisis.getTipo() == TipoToken.IDENTIFIER) {
-        params.add(previous());
-        match(TipoToken.IDENTIFIER);
-        if (preanalisis.getTipo() == TipoToken.COMMA) {
-            match(TipoToken.COMMA);
-        } else {
-            break;
-        }
+    List<Token> parameters = new ArrayList<Token>();
+    match(TipoToken.IDENTIFIER); 
+    parameters.add(previous());
+    parameters_2(parameters);
+    return parameters;
+}
+
+private void parameters_2(List<Token> parameters) throws ParserException{
+    if(preanalisis.tipo == TipoToken.COMMA){
+        match(TipoToken.COMMA); 
+        match(TipoToken.IDENTIFIER); 
+        parameters.add(previous());
+        parameters_2(parameters); 
     }
-    return params;
 }
 
 private List<Expression> arguments_opc() throws ParserException {
-    if (preanalisis.getTipo() != TipoToken.RIGHT_PAREN) {
-        return arguments();
+    List<Expression> expressions = new ArrayList<Expression>();
+    expressions.add(expression());
+    if(preanalisis.tipo == TipoToken.COMMA) {
+        arguments(expressions); 
+        return expressions;
+    } else {
+        return expressions;
     }
-    return Collections.emptyList(); // E
 }
 
-private List<Expression> arguments() throws ParserException {
-    List<Expression> args = new ArrayList<>();
-    while (preanalisis.getTipo() != TipoToken.RIGHT_PAREN) {
-        args.add(expression());
-        if (preanalisis.getTipo() == TipoToken.COMMA) {
-            match(TipoToken.COMMA);
-        } else {
-            break;
-        }
+private void arguments(List<Expression> expressions) throws ParserException{
+    if(preanalisis.tipo == TipoToken.COMMA){
+        match(TipoToken.COMMA); 
+        expressions.add(expression()); 
+        arguments(expressions);
     }
-    return args;
 }
+
 
 
     private void match(TipoToken tt) throws ParserException {

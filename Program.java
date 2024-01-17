@@ -1,5 +1,5 @@
 import java.util.List;
 
 public interface Program {
-    List<Statement> progra();
+    List<Statement> progra() throws ParserException;
 }

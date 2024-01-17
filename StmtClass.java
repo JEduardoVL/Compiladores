@@ -24,8 +24,10 @@ public class StmtClass extends Statement {
     }
 
     @Override
-    public void execute() {
-        // Aquí implementas cómo se ejecutan las clases, por ejemplo, registrar la clase en la tabla de símbolos
+    void solve(TablaSimbolos tabla) {
+        throw new UnsupportedOperationException("Unimplemented method 'solve'");
     }
+
+  
 }
 

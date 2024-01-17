@@ -1,15 +1,3 @@
-/*public class ExprBinary extends Expression{
-    final Expression left;
-    final Token operator;
-    final Expression right;
-
-    ExprBinary(Expression left, Token operator, Expression right) {
-        this.left = left;
-        this.operator = operator;
-        this.right = right;
-    }
-
-}*/
 public class ExprBinary extends Expression {
     final Expression left;
     final Token operator;
@@ -22,9 +10,9 @@ public class ExprBinary extends Expression {
     }
 
     @Override
-    public Object solve() {
-        Object leftVal = left.solve();
-        Object rightVal = right.solve();
+    public Object solve(TablaSimbolos tabla) {
+        Object leftVal = left.solve(tabla);
+        Object rightVal = right.solve(tabla);
 
         // Asegúrate de manejar correctamente los tipos de datos (Integer, Float, Double, etc.)
         switch (operator.tipo) {

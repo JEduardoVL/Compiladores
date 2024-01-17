@@ -6,8 +6,9 @@ public class ExprThis extends Expression{
     }
 
     @Override
-    Object solve() {
-       
+    Object solve(TablaSimbolos tabla) {
         throw new UnsupportedOperationException("Unimplemented method 'solve'");
     }
+
+  
 }

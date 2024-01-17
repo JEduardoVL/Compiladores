@@ -10,8 +10,8 @@ public class ExprSet extends Expression{
     }
 
     @Override
-    Object solve() {
-       
+    Object solve(TablaSimbolos tabla) {
         throw new UnsupportedOperationException("Unimplemented method 'solve'");
     }
+
 }

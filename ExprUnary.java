@@ -1,13 +1,3 @@
-/*public class ExprUnary extends Expression{
-    final Token operator;
-    final Expression right;
-
-    ExprUnary(Token operator, Expression right) {
-        this.operator = operator;
-        this.right = right;
-    }
-}*/
-
 public class ExprUnary extends Expression {
     final Token operator;
     final Expression right;
@@ -18,24 +8,30 @@ public class ExprUnary extends Expression {
     }
 
     @Override
-    public Object solve() {
-        Object rightVal = right.solve();
-
-        switch (operator.getTipo()) {
-            case MINUS:
-                // Negación numérica
-                if (rightVal instanceof Number) {
-                    return -convertToDouble(rightVal);
-                }
-                break;
-            case BANG:
-                // Negación lógica
-                return !Boolean.TRUE.equals(rightVal);
-            default:
-                throw new RuntimeException("Operador unario desconocido: " + operator.getTipo());
+    Object solve(TablaSimbolos tabla){
+        try{
+            switch (operator.tipo) {
+                case BANG:
+                    if(right.solve(tabla) instanceof Boolean)
+                        return !((boolean) right.solve(tabla));
+                    else
+                        throw new RuntimeException( "Error semantico: Operando no compatible");
+                case MINUS:
+                    if(right.solve(tabla) instanceof Integer)
+                        return -((Integer) right.solve(tabla));
+                    else if(right.solve(tabla) instanceof Float)
+                        return -((Float) right.solve(tabla));
+                    else if(right.solve(tabla) instanceof Double)
+                        return -((Double) right.solve(tabla));
+                    else 
+                        throw new RuntimeException("Error semantico: Operando no compatible");
+                default:
+                    break;
+            }
+        } catch (Exception e){
+            e.printStackTrace();
         }
-
-        throw new RuntimeException("Tipo inválido para operador unario: " + rightVal.getClass().getSimpleName());
+        return null;
     }
 
     private double convertToDouble(Object obj) {
@@ -50,4 +46,3 @@ public class ExprUnary extends Expression {
         return operator.lexema + right;
     }
 }
-

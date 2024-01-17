@@ -1,11 +1,3 @@
-/*public class StmtExpression extends Statement {
-    final Expression expression;
-
-    StmtExpression(Expression expression) {
-        this.expression = expression;
-    }
-}*/
-
 public class StmtExpression extends Statement {
     final Expression expression;
 
@@ -14,9 +6,10 @@ public class StmtExpression extends Statement {
     }
 
     @Override
-    public void execute() {
-        // Ejecuta la expresión. En este contexto, "ejecutar" generalmente significa "evaluar".
-        expression.solve();
+    void solve(TablaSimbolos tabla) {
+        // Resuelve la expresión utilizando la tabla de símbolos.
+        // En este contexto, "resolver" significa evaluar la expresión en el contexto de la tabla de símbolos.
+        expression.solve(tabla);
     }
 
     @Override
@@ -25,4 +18,3 @@ public class StmtExpression extends Statement {
         return expression.toString() + ";";
     }
 }
-

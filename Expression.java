@@ -1,3 +1,3 @@
 abstract class Expression {
-    abstract Object solve();
+    abstract Object solve(TablaSimbolos tabla);
 }

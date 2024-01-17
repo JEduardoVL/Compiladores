@@ -1,14 +1,3 @@
-/*class ExprVariable extends Expression {
-    final Token name;
-
-    ExprVariable(Token name) {
-        this.name = name;
-    }
-    public Object solve() {
-        return TablaSimbolos.getInstance().get(this.name.getLexema());
-    }
-}*/
-
 class ExprVariable extends Expression {
     final Token name;
 
@@ -17,12 +6,13 @@ class ExprVariable extends Expression {
     }
 
     @Override
-    public Object solve() {
-        TablaSimbolos tablaSimbolos = TablaSimbolos.getInstance();
-        if (!tablaSimbolos.isDeclared(name.getLexema())) {
+    public Object solve(TablaSimbolos tabla) {
+        // Verificar si la variable está declarada en la tabla de símbolos
+        if (!tabla.existeIdentificador(name.getLexema())) {
             throw new RuntimeException("La variable " + name.getLexema() + " no ha sido declarada");
         }
-        return tablaSimbolos.get(name.getLexema());
+        // Obtener el valor de la variable de la tabla de símbolos
+        return tabla.obtener(name.getLexema());
     }
 
     @Override

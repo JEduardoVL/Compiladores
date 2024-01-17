@@ -1,11 +1,3 @@
-/*public class StmtPrint extends Statement {
-    final Expression expression;
-
-    StmtPrint(Expression expression) {
-        this.expression = expression;
-    }
-}*/
-
 public class StmtPrint extends Statement {
     final Expression expression;
 
@@ -14,13 +6,11 @@ public class StmtPrint extends Statement {
     }
 
     @Override
-    public void execute() {
-        Object value = expression.solve();
-        System.out.println(value); // Imprime el valor evaluado
-    }
-
-    @Override
     public String toString() {
-        return "print " + expression + ";";
+        return "print " + expression + ";\n";
+    }
+    @Override
+    void solve(TablaSimbolos tabla) {
+        System.out.println(expression.solve(tabla));
     }
 }
