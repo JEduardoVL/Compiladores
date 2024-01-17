@@ -1,11 +1,18 @@
-//import javax.swing.plaf.nimbus.State;
 import java.util.List;
 
-public class StmtBlock extends Statement {
+public class StmtBlock extends Statement{
     final List<Statement> statements;
 
     StmtBlock(List<Statement> statements) {
         this.statements = statements;
+    }
+
+    @Override
+    void solve(TablaSimbolos tabla){
+        TablaSimbolos tablaSiguiente = new TablaSimbolos(tabla);
+        for (Statement statement : statements){
+                statement.solve(tablaSiguiente);
+        } 
     }
 
     @Override
@@ -15,13 +22,5 @@ public class StmtBlock extends Statement {
             stmt += statement.toString();
         }
         return "{\n" + stmt + "}\n";
-    }
-
-    @Override
-    void solve(TablaSimbolos tabla){
-        TablaSimbolos tablaSiguiente = new TablaSimbolos(tabla);
-        for (Statement statement : statements){
-                statement.solve(tablaSiguiente);
-        } 
     }
 }

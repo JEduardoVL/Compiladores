@@ -23,10 +23,6 @@ public class StmtIf extends Statement {
 
     @Override
     public String toString() {
-        String result = "if (" + condition + ") " + thenBranch;
-        if (elseBranch != null) {
-            result += " else " + elseBranch;
-        }
-        return result;
+        return "if(" + condition + ")\n" + thenBranch + "else\n" + elseBranch + "\n";
     }
 }

@@ -6,17 +6,15 @@ class ExprVariable extends Expression {
     }
 
     @Override
-    public Object solve(TablaSimbolos tabla) {
-        // Verificar si la variable está declarada en la tabla de símbolos
-        if (!tabla.existeIdentificador(name.getLexema())) {
-            throw new RuntimeException("La variable " + name.getLexema() + " no ha sido declarada");
-        }
-        // Obtener el valor de la variable de la tabla de símbolos
-        return tabla.obtener(name.getLexema());
+    Object solve(TablaSimbolos tabla){
+        if(!tabla.existeIdentificador(name.lexema))
+            throw new RuntimeException("La variable" + name.lexema + "n ha sido declarada");
+        else
+            return tabla.obtener(name.lexema);
     }
 
     @Override
-    public String toString() {
-        return name.getLexema();
+    public String toString(){
+        return name.lexema;
     }
 }

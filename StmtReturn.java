@@ -6,11 +6,6 @@ public class StmtReturn extends Statement {
     }
 
     @Override
-    public String toString() {
-        return "return " + value +";\n";
-    }
-
-    @Override
     void solve(TablaSimbolos tabla){
         TablaSimbolos tablaReturn;
         if(tabla.existeIdentificador("return")){
@@ -20,7 +15,13 @@ public class StmtReturn extends Statement {
         else
             throw new RuntimeException("Error semantico: uso incorrecto de return");
     }
+
+    @Override
+    public String toString() {
+        return "return " + value +";\n";
+    }
 }
+
 
 /*
  * 

@@ -6,11 +6,12 @@ public class StmtPrint extends Statement {
     }
 
     @Override
-    public String toString() {
-        return "print " + expression + ";\n";
-    }
-    @Override
     void solve(TablaSimbolos tabla) {
         System.out.println(expression.solve(tabla));
+    }
+
+    @Override
+    public String toString() {
+        return "print " + expression + ";\n";
     }
 }

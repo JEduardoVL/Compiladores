@@ -36,10 +36,6 @@ public class StmtVar extends Statement {
         this.name = name;
         this.initializer = initializer;
     }
-    @Override
-    public String toString() {
-        return "var " + name.lexema + " = " + initializer + ";\n";
-    }
 
     @Override
     void solve(TablaSimbolos tabla){
@@ -52,5 +48,9 @@ public class StmtVar extends Statement {
         else
             throw new RuntimeException("Error semantico: Asignación incompatible");
     }
-}
 
+    @Override
+    public String toString() {
+        return "var " + name.lexema + " = " + initializer + ";\n";
+    }
+}

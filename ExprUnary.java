@@ -1,4 +1,4 @@
-public class ExprUnary extends Expression {
+public class ExprUnary extends Expression{
     final Token operator;
     final Expression right;
 
@@ -34,15 +34,8 @@ public class ExprUnary extends Expression {
         return null;
     }
 
-    private double convertToDouble(Object obj) {
-        if (obj instanceof Number) {
-            return ((Number) obj).doubleValue();
-        }
-        throw new RuntimeException("No se puede convertir a Double: " + obj.getClass().getName());
-    }
-
     @Override
-    public String toString() {
+    public String toString(){
         return operator.lexema + right;
     }
 }

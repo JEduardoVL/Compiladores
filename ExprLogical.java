@@ -1,3 +1,5 @@
+import java.util.Objects;
+
 public class ExprLogical extends Expression {
     final Expression left;
     final Token operator;
@@ -10,61 +12,61 @@ public class ExprLogical extends Expression {
     }
 
     @Override
-    public Object solve(TablaSimbolos tabla) {
-        Object leftVal = left.solve(tabla);
-        Object rightVal = right.solve(tabla);
-
-        switch (operator.getTipo()) {
-            case AND:
-                return asBoolean(leftVal) && asBoolean(rightVal);
+    Object solve(TablaSimbolos tabla) {
+        switch (operator.tipo) {
             case OR:
-                return asBoolean(leftVal) || asBoolean(rightVal);
+                return evaluateLogical(left, right, tabla, (a, b) -> a || b);
+            case AND:
+                return evaluateLogical(left, right, tabla, (a, b) -> a && b);
             case BANG_EQUAL:
-                return !isEqual(leftVal, rightVal);
+                return !evaluateEquality(left, right, tabla);
             case EQUAL_EQUAL:
-                return isEqual(leftVal, rightVal);
+                return evaluateEquality(left, right, tabla);
             case GREATER:
+                return compare(left, right, tabla, (a, b) -> a > b);
             case GREATER_EQUAL:
+                return compare(left, right, tabla, (a, b) -> a >= b);
             case LESS:
+                return compare(left, right, tabla, (a, b) -> a < b);
             case LESS_EQUAL:
-                return compare(leftVal, rightVal, operator.getTipo());
+                return compare(left, right, tabla, (a, b) -> a <= b);
             default:
-                throw new RuntimeException("Operador lógico desconocido: " + operator.getTipo());
+                throw new RuntimeException("Error semantico: Operador desconocido.");
         }
     }
 
-    private boolean asBoolean(Object value) {
-        if (value instanceof Boolean) {
-            return (Boolean) value;
-        }
-        throw new RuntimeException("Tipo de dato no booleano en expresión lógica.");
+    private boolean evaluateLogical(Expression left, Expression right, TablaSimbolos tabla,
+                                    LogicalOperation operation) {
+        return operation.apply((Boolean) left.solve(tabla), (Boolean) right.solve(tabla));
     }
 
-    private boolean isEqual(Object a, Object b) {
-        if (a == null && b == null) {
-            return true;
-        }
-        if (a == null) {
-            return false;
-        }
-        return a.equals(b);
+    private boolean evaluateEquality(Expression left, Expression right, TablaSimbolos tabla) {
+        Object leftResult = left.solve(tabla);
+        Object rightResult = right.solve(tabla);
+        return Objects.equals(leftResult, rightResult);
     }
 
-    private Object compare(Object a, Object b, TipoToken operatorType) {
-        if (a instanceof Number && b instanceof Number) {
-            double diff = ((Number) a).doubleValue() - ((Number) b).doubleValue();
-            switch (operatorType) {
-                case GREATER:
-                    return diff > 0;
-                case GREATER_EQUAL:
-                    return diff >= 0;
-                case LESS:
-                    return diff < 0;
-                case LESS_EQUAL:
-                    return diff <= 0;
-            }
+    private boolean compare(Expression left, Expression right, TablaSimbolos tabla, 
+                            ComparisonOperation operation) {
+        Object leftResult = left.solve(tabla);
+        Object rightResult = right.solve(tabla);
+        if (leftResult instanceof Number && rightResult instanceof Number) {
+            Double leftNumber = ((Number) leftResult).doubleValue();
+            Double rightNumber = ((Number) rightResult).doubleValue();
+            return operation.apply(leftNumber, rightNumber);
+        } else {
+            throw new RuntimeException("Error semantico: Operandos incompatibles.");
         }
-        throw new RuntimeException("Los operandos deben ser numéricos para comparación.");
+    }
+
+    @FunctionalInterface
+    interface LogicalOperation {
+        boolean apply(boolean a, boolean b);
+    }
+
+    @FunctionalInterface
+    interface ComparisonOperation {
+        boolean apply(double a, double b);
     }
 
     @Override

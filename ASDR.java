@@ -1,26 +1,26 @@
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 //import java.util.Collections;
 //import java.util.HashMap;
-import java.util.List;
 //import java.util.Map;
 //import java.util.Stack;
 
 public class ASDR implements Program{
 
-    //private static ASDR instance;
+    private static ASDR instance;
     private int i = 0;
     private Token preanalisis;
     private final List<Token> tokens;
     private List<Statement> declaracionesm = new ArrayList<>();
 
    // Método estático para obtener la instancia
-   /*public static ASDR getInstance(List<Token> tokens) {
+   public static ASDR getInstance(List<Token> tokens) {
     if (instance == null) {
         instance = new ASDR(tokens);
     }
     return instance;
-}*/
+}
 
     public ASDR(List<Token> tokens) {
         this.tokens = tokens;
@@ -50,7 +50,7 @@ public class ASDR implements Program{
     public List<Statement> progra() throws ParserException {
         program();
         if(preanalisis.tipo == TipoToken.EOF ){
-            System.out.println("La sintaxis es correcta");
+            System.out.println("ASDR Correcto.");
             return  declaracionesm;
         }else {
             System.out.println("Se encontraron errores");
@@ -62,31 +62,28 @@ public class ASDR implements Program{
             return declaration(declaracionesm);
     }
 
-    private List<Statement>declaration(List<Statement>declarations)throws ParserException {
-        // Aquí asumimos que preanalisis es el token actual y avanza con cada llamada
-        if (preanalisis.getTipo() == TipoToken.FUN) {
-            //return fun_decl();
-            declarations.add(fun_decl());
-            declaration(declarations);
-        } else if (preanalisis.getTipo() == TipoToken.VAR) {
-            //return var_decl();
+    private List<Statement>declaration(List<Statement>declarations) throws ParserException{
+        // Comprueba el tipo de declaración y llama a la función correspondiente
+        if(preanalisis.tipo == TipoToken.FUN){
+            declarations.add(fun_decl()); // Gestiona la declaración de una función
+            declaration(declarations); // Llama recursivamente para seguir analizando
+        }
+        else if (preanalisis.tipo == TipoToken.VAR){
             declarations.add(var_decl()); // Gestiona la declaración de una variable
-            declaration(declarations); 
-        } else if (checkStatementStart(preanalisis.getTipo())) {
-            //return statement();
-            declarations.add(statement());
-            declaration(declarations);
+            declaration(declarations); // Llama recursivamente para seguir analizando
+        }
+        // Comprueba si el tipo de token corresponde a una sentencia
+        else if (preanalisis.tipo == TipoToken.BANG || preanalisis.tipo == TipoToken.MINUS ||  preanalisis.tipo == TipoToken.TRUE ||
+                preanalisis.tipo == TipoToken.FALSE || preanalisis.tipo == TipoToken.NULL || preanalisis.tipo == TipoToken.NUMBER ||
+                preanalisis.tipo == TipoToken.STRING || preanalisis.tipo == TipoToken.IDENTIFIER || preanalisis.tipo == TipoToken.LEFT_PAREN ||
+                preanalisis.tipo == TipoToken.FOR || preanalisis.tipo == TipoToken.IF || preanalisis.tipo == TipoToken.PRINT ||
+                preanalisis.tipo == TipoToken.RETURN || preanalisis.tipo == TipoToken.WHILE || preanalisis.tipo == TipoToken.LEFT_BRACE){
+            declarations.add(statement()); // Gestiona la sentencia
+            declaration(declarations); // Llama recursivamente para seguir analizando
         }
         return declarations;
     }
-    
-  
-    private boolean checkStatementStart(TipoToken tipo) {
-        // Retorna true si el tipo del token es el inicio de una sentencia
-        return tipo == TipoToken.BANG || tipo == TipoToken.MINUS || tipo == TipoToken.FALSE|| tipo == TipoToken.NULL|| tipo == TipoToken.STRING ||
-        tipo == TipoToken.IDENTIFIER || tipo == TipoToken.FOR || tipo == TipoToken.IF || tipo == TipoToken.RETURN || tipo == TipoToken.WHILE ||
-        tipo == TipoToken.TRUE || tipo == TipoToken.NUMBER || tipo == TipoToken.LEFT_PAREN || tipo == TipoToken.PRINT || tipo == TipoToken.LEFT_BRACE;
-    }
+
 
     private Statement fun_decl() throws ParserException {
     match(TipoToken.FUN);
@@ -107,7 +104,7 @@ public class ASDR implements Program{
     }
 
     private Expression var_init() throws ParserException {
-        if (preanalisis.getTipo() == TipoToken.EQUAL) {
+        if (preanalisis.tipo == TipoToken.EQUAL) {
             match(TipoToken.EQUAL);
             return expression();
         }
@@ -117,7 +114,7 @@ public class ASDR implements Program{
     //////////////////////////////////// SENTENCIAS
 
     /*private Statement statement() throws ParserException {
-        switch (preanalisis.getTipo()) {
+        switch (preanalisis.tipo) {
             case IF:
                 return if_stmt(); 
             case FOR:
@@ -144,12 +141,7 @@ public class ASDR implements Program{
         }
     }*/
     private Statement statement() throws ParserException {
-        // Asegúrate de que preanalisis no es nulo
-        if (preanalisis == null) {
-            throw new ParserException("Token inesperado: fin de entrada.");
-        }
-    
-        switch (preanalisis.getTipo()) {
+        switch (preanalisis.tipo) {
             case IF:
                 return if_stmt();
             case FOR:
@@ -205,9 +197,9 @@ public class ASDR implements Program{
 }
     
     private Statement for_stmt_1() throws ParserException {
-        if (preanalisis.getTipo() == TipoToken.VAR) {
+        if (preanalisis.tipo == TipoToken.VAR) {
             return var_decl(); 
-        } else if (preanalisis.getTipo() == TipoToken.SEMICOLON) {
+        } else if (preanalisis.tipo == TipoToken.SEMICOLON) {
             match(TipoToken.SEMICOLON);
             return null;
         } else {
@@ -217,7 +209,7 @@ public class ASDR implements Program{
     }
     
     private Expression for_stmt_2() throws ParserException {
-        if (preanalisis.getTipo() != TipoToken.SEMICOLON) {
+        if (preanalisis.tipo != TipoToken.SEMICOLON) {
             Expression condition = expression();
             match(TipoToken.SEMICOLON);
             return condition;
@@ -228,7 +220,7 @@ public class ASDR implements Program{
     }
     
     private Expression for_stmt_3() throws ParserException {
-        if (preanalisis.getTipo() != TipoToken.RIGHT_PAREN) {
+        if (preanalisis.tipo != TipoToken.RIGHT_PAREN) {
             return expression(); 
         } else {
             return null; // Sin incremento
@@ -252,7 +244,7 @@ public class ASDR implements Program{
     
 
     private Statement else_statement() throws ParserException {
-        if (preanalisis.getTipo() == TipoToken.ELSE) {
+        if (preanalisis.tipo == TipoToken.ELSE) {
             match(TipoToken.ELSE);
             // Crear un nuevo alcance para el bloque else
             //entrarNuevoAlcance("else-block");
@@ -277,16 +269,15 @@ public class ASDR implements Program{
         return new StmtReturn(value);
     }
 
-    private boolean checkStatementStartV2(TipoToken tipo) {
-        // Retorna true si el tipo del token es el inicio de una sentencia
-        return tipo == TipoToken.BANG || tipo == TipoToken.MINUS || tipo == TipoToken.FALSE|| tipo == TipoToken.NULL|| tipo == TipoToken.STRING ||
-        tipo == TipoToken.IDENTIFIER  ||
-        tipo == TipoToken.TRUE || tipo == TipoToken.NUMBER || tipo == TipoToken.LEFT_PAREN;
-    }
+    
 
 
     private Expression return_exp_opc() throws ParserException {
-        if (checkStatementStartV2(preanalisis.getTipo())) {
+        if(preanalisis.tipo == TipoToken.BANG || preanalisis.tipo == TipoToken.MINUS || 
+        preanalisis.tipo == TipoToken.TRUE || preanalisis.tipo == TipoToken.FALSE || 
+        preanalisis.tipo == TipoToken.NULL || preanalisis.tipo == TipoToken.NUMBER || 
+        preanalisis.tipo == TipoToken.STRING || preanalisis.tipo == TipoToken.IDENTIFIER || 
+        preanalisis.tipo == TipoToken.LEFT_PAREN){
             return expression();
         }
         return null; // E
@@ -308,6 +299,7 @@ public class ASDR implements Program{
     }
 
     private StmtBlock block() throws ParserException {
+        match(TipoToken.LEFT_BRACE);
         List<Statement> declarations = new ArrayList<>();
         declaration(declarations);
         match(TipoToken.RIGHT_BRACE);
@@ -379,9 +371,9 @@ public class ASDR implements Program{
     }
 
     private Expression equality_2(Expression expr) throws ParserException {
-        while (preanalisis.getTipo() == TipoToken.BANG_EQUAL || preanalisis.getTipo() == TipoToken.EQUAL_EQUAL) {
+        while (preanalisis.tipo == TipoToken.BANG_EQUAL || preanalisis.tipo == TipoToken.EQUAL_EQUAL) {
             Token operator = preanalisis;
-            match(preanalisis.getTipo());
+            match(preanalisis.tipo);
             Expression right = comparison();
             expr = new ExprBinary(expr, operator, right);
             return equality_2(expr);
@@ -395,10 +387,10 @@ public class ASDR implements Program{
     }
 
     private Expression comparison_2(Expression expr) throws ParserException {
-        while (preanalisis.getTipo() == TipoToken.GREATER || preanalisis.getTipo() == TipoToken.GREATER_EQUAL
-               || preanalisis.getTipo() == TipoToken.LESS || preanalisis.getTipo() == TipoToken.LESS_EQUAL) {
+        while (preanalisis.tipo == TipoToken.GREATER || preanalisis.tipo == TipoToken.GREATER_EQUAL
+               || preanalisis.tipo == TipoToken.LESS || preanalisis.tipo == TipoToken.LESS_EQUAL) {
             Token operator = preanalisis;
-            match(preanalisis.getTipo());
+            match(preanalisis.tipo);
             Expression right = term();
             expr = new ExprLogical(expr, operator, right);
             return comparison_2(expr);
@@ -438,7 +430,7 @@ public class ASDR implements Program{
     }
 
     private Expression factor2(Expression expr) throws ParserException{
-        switch (preanalisis.getTipo()){
+        switch (preanalisis.tipo){
             case SLASH:
                 match(TipoToken.SLASH);
                 Token operador = previous();
@@ -458,7 +450,7 @@ public class ASDR implements Program{
     }
 
     private Expression unary() throws ParserException{
-        switch (preanalisis.getTipo()){
+        switch (preanalisis.tipo){
             case BANG:
                 match(TipoToken.BANG);
                 Token operador = previous();
@@ -481,7 +473,7 @@ public class ASDR implements Program{
     }
 
     private Expression call2(Expression expr) throws ParserException {
-        switch (preanalisis.getTipo()){
+        switch (preanalisis.tipo){
             case LEFT_PAREN:
                 match(TipoToken.LEFT_PAREN);
                 List<Expression> lstArguments = arguments_opc();
@@ -495,7 +487,7 @@ public class ASDR implements Program{
     }
 
     private Expression primary() throws ParserException{
-        switch (preanalisis.getTipo()){
+        switch (preanalisis.tipo){
             case TRUE:
                 match(TipoToken.TRUE);
                 return new ExprLiteral(true);
@@ -508,11 +500,11 @@ public class ASDR implements Program{
             case NUMBER:
                 match(TipoToken.NUMBER);
                 Token numero = previous();
-                return new ExprLiteral(numero.getLiteral());
+                return new ExprLiteral(numero.literal);
             case STRING:
                 match(TipoToken.STRING);
                 Token cadena = previous();
-                return new ExprLiteral(cadena.getLiteral());
+                return new ExprLiteral(cadena.literal);
             case IDENTIFIER:
                 match(TipoToken.IDENTIFIER);
                 Token id = previous();
@@ -606,16 +598,16 @@ private void arguments(List<Expression> expressions) throws ParserException{
 
 
     private void match(TipoToken tt) throws ParserException {
-        if (preanalisis.getTipo() == tt) {
+        if (preanalisis.tipo == tt) {
             i++;
             if (i < tokens.size()) {
                 preanalisis = tokens.get(i);
             }
         } else {
             String message = "Error en la línea " +
-                    preanalisis.getPosicion() +
+                    preanalisis.tipo +
                     ". Se esperaba " + tt +
-                    " pero se encontró " + preanalisis.getTipo();
+                    " pero se encontró " + preanalisis.tipo;
             throw new ParserException(message);
         }
     }
