@@ -15,7 +15,21 @@ public class StmtReturn extends Statement {
 
     @Override
     public void execute() {
-        // Manejar la lógica de retorno aquí
+        // Evalúa la expresión y lanza una excepción personalizada con el valor de retorno
+        Object returnValue = value.solve();
+        throw new Return(returnValue);
     }
 }
 
+
+/*
+ * 
+ * class Return extends RuntimeException {
+    final Object value;
+
+    Return(Object value) {
+        super(null, null, false, false);
+        this.value = value;
+    }
+}
+ */

@@ -9,6 +9,8 @@ import java.util.List;
     }
 }*/
 
+//import java.util.List;
+
 public class StmtBlock extends Statement {
     final List<Statement> statements;
 
@@ -21,5 +23,15 @@ public class StmtBlock extends Statement {
         for (Statement statement : statements) {
             statement.execute();
         }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder stmt = new StringBuilder("{\n");
+        for (Statement statement : statements) {
+            stmt.append(statement.toString()).append("\n");
+        }
+        stmt.append("}\n");
+        return stmt.toString();
     }
 }

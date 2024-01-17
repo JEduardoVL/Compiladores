@@ -13,6 +13,7 @@ import java.util.List;
     }
 }*/
 
+
 public class ExprCallFunction extends Expression {
     final Expression callee;
     final List<Expression> arguments;
@@ -24,8 +25,8 @@ public class ExprCallFunction extends Expression {
 
     @Override
     public Object solve() {
-        // Aquí asumimos que callee.resolve() devuelve una instancia de StmtFunction o similar
-        StmtFunction function = (StmtFunction)callee.solve();
+        // Resolver la expresión 'callee' que debería devolver un objeto StmtFunction
+        StmtFunction function = (StmtFunction) callee.solve();
 
         // Evaluar los argumentos
         List<Object> evaluatedArgs = new ArrayList<>();
@@ -36,6 +37,19 @@ public class ExprCallFunction extends Expression {
         // Ejecutar la función con los argumentos evaluados
         return function.executeWithArguments(evaluatedArgs);
     }
-}
 
+    @Override
+    public String toString() {
+        String lista = "";
+        // Construye una cadena con los argumentos separados por comas.
+        for (Expression expression : arguments) { 
+            lista += expression.toString();
+            lista += ", ";
+        }
+        // Elimina la última coma y espacio del string de argumentos.
+        lista = lista.substring(0, lista.length() - 2);
+        // Devuelve la representación en cadena de la llamada a la función.
+        return callee + "(" + lista + ");";
+    }
+}
 

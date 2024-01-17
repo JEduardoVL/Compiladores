@@ -1,35 +1,23 @@
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
+//import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Stack;
+//import java.util.Map;
+//import java.util.Stack;
 
 public class ASDR implements Program{
 
     private static ASDR instance;
-
-    private String nombreAlcanceActual;
-    private Stack<String> scopeNamesStack = new Stack<>();
-    private Map<String, TablaSimbolos> symbolTables = new HashMap<>();
-   
-    private int scopeCounter = 0;
-
-
     private int i = 0;
-    //private boolean hayErrores = false;
     private Token preanalisis;
     private final List<Token> tokens;
+   // private List<Statement> declaraciones;
 
     public ASDR(List<Token> tokens) {
         this.tokens = tokens;
         preanalisis = this.tokens.get(i);
-
-        // Inicializar la tabla de símbolos global
-        TablaSimbolos tablaGlobal = new TablaSimbolos();
-        scopeNamesStack.push("global");
-        symbolTables.put("global", tablaGlobal);
+        TablaSimbolos.getInstance().enterNewScope("global");
     }
 
     // Método estático para obtener la instancia
@@ -39,118 +27,62 @@ public class ASDR implements Program{
         }
         return instance;
     }
-    
-    private String generateUniqueScopeName(String baseName) {
-        return baseName + "_" + scopeCounter++;
-    }
-
 
     public void entrarNuevoAlcance(String baseName) {
-        String uniqueScopeName = generateUniqueScopeName(baseName);
-        TablaSimbolos nuevaTabla = new TablaSimbolos();
-        symbolTables.put(uniqueScopeName, nuevaTabla);
-        scopeNamesStack.push(uniqueScopeName);
-        nombreAlcanceActual = uniqueScopeName; // Asegúrate de actualizar el alcance actual después de crear uno nuevo
+        TablaSimbolos.getInstance().enterNewScope(baseName);
     }
-    
+
     public void salirAlcanceActual() {
-        if (!scopeNamesStack.isEmpty() && !getCurrentScope().equals("global")) {
-            String scopeName = scopeNamesStack.pop();
-            symbolTables.remove(scopeName);
-        } else {
-            throw new RuntimeException("No se puede salir del alcance global."); // Cambiado de IllegalArgumentException a RuntimeException para mantener la consistencia
-        }
-        if (!scopeNamesStack.isEmpty()) {
-            nombreAlcanceActual = getCurrentScope(); // Actualiza el nombre del alcance actual al último en la pila
-        } else {
-            nombreAlcanceActual = "global"; // Si la pila está vacía, el alcance actual debe ser el global
-        }
+        TablaSimbolos.getInstance().exitCurrentScope();
     }
 
-    
-    
-
-    private String getCurrentScope() {
-        if (!scopeNamesStack.isEmpty()) {
-            return scopeNamesStack.peek(); // Devuelve el nombre del alcance actual que está en la cima de la pila
-        }
-        return "global"; // Devuelve "global" si la pila está vacía
-    }
-    
     private void agregarIdentificador(String identificador, Object valor) {
-        TablaSimbolos currentTable = symbolTables.get(scopeNamesStack.peek());
-        currentTable.declare(identificador, valor);
+        TablaSimbolos.getInstance().declare(identificador, valor);
     }
 
     private boolean existeIdentificador(String identificador) {
-        // Se busca desde el alcance actual hacia el alcance global
-        for (int i = scopeNamesStack.size() - 1; i >= 0; i--) {
-            String scopeName = scopeNamesStack.get(i);
-            TablaSimbolos scopeTable = symbolTables.get(scopeName);
-            if (scopeTable != null && scopeTable.isDeclared(identificador)) {
-                return true;
-            }
-        }
-        return false; // Si no se encuentra en ningún alcance
+        return TablaSimbolos.getInstance().isDeclared(identificador);
     }
 
-    /*private Object obtener(String identificador) {
-        for (int i = scopeNamesStack.size() - 1; i >= 0; i--) {
-            String scopeName = scopeNamesStack.get(i);
-            TablaSimbolos scopeTable = symbolTables.get(scopeName);
-            if (scopeTable != null && scopeTable.isDeclared(identificador)) {
-                return scopeTable.get(identificador);
+    @Override
+public List<Statement> progra() {
+    List<Statement> statements = new ArrayList<>();
+    try {
+        while (!isAtEnd()) {
+            Statement stmt = declaration();  // Puede lanzar ParserException
+            if (stmt != null) {
+                statements.add(stmt);
             }
         }
-        throw new RuntimeException("Variable no definida: " + identificador);
-    }*/
+    } catch (ParserException e) {
+        System.out.println("Error de parseo: " + e.getMessage());
+        return null; // O manejar de otra manera
+    }
+    if (preanalisis.tipo == TipoToken.EOF) {
+        return statements;
+    } else {
+        System.out.println("Se encontraron errores ASDR");
+        return null;
+    }
+}
 
-    public boolean progra() {
-        try {
-            declaration();
-            if (preanalisis.tipo == TipoToken.EOF) {
-                System.out.println("ASDR correcto");
-                return true;
-            } else {
-                System.out.println("Se encontraron errores ASDR");
-            }
-        } catch (ParserException e) {
-            System.out.println("Se encontraron errores ASDR: " + e.getMessage());
-            return false;
-        }
-        return false;
+    private boolean isAtEnd() {
+        return preanalisis.tipo == TipoToken.EOF;
     }
 
-    /*private Statement declaration() throws ParserException {
-        Statement result = null;
-        while (true) {
-            if (preanalisis.getTipo() == TipoToken.FUN) {
-                result = fun_decl();
-            } else if (preanalisis.getTipo() == TipoToken.VAR) {
-                result = var_decl();
-            } else if (checkStatementStart(preanalisis.getTipo())) {
-                result = statement();
-                // Elimina la llamada recursiva innecesaria aquí
-            } else {
-                break; // Rompe el bucle si no es un inicio de declaración
-            }
+    private Statement declaration() throws ParserException {
+        // Aquí asumimos que preanalisis es el token actual y avanza con cada llamada
+        if (preanalisis.getTipo() == TipoToken.FUN) {
+            return fun_decl();
+        } else if (preanalisis.getTipo() == TipoToken.VAR) {
+            return var_decl();
+        } else if (checkStatementStart(preanalisis.getTipo())) {
+            return statement();
+        } else {
+            // Devuelve null o lanza una excepción si no es una declaración válida
+            // Puede ser necesario ajustar esto según tu lógica de análisis sintáctico
+            return declaration();
         }
-        return result;
-    }*/
-    private List<Statement> declaration() throws ParserException {
-        List<Statement> declarations = new ArrayList<>();
-        while (true) {
-            if (preanalisis.getTipo() == TipoToken.FUN) {
-                declarations.add(fun_decl());
-            } else if (preanalisis.getTipo() == TipoToken.VAR) {
-                declarations.add(var_decl());
-            } else if (checkStatementStart(preanalisis.getTipo())) {
-                declarations.add(statement());
-            } else {
-                break; // Sale del bucle si no es un inicio de declaración
-            }
-        }
-        return declarations;
     }
     
   
@@ -425,10 +357,10 @@ public class ASDR implements Program{
     
         List<Statement> statements = new ArrayList<>();
         while (!check(TipoToken.RIGHT_BRACE)) {
-            // Asume que declaration() devuelve una List<Statement>
-            List<Statement> newStatements = declaration();
-            if (newStatements != null) {
-                statements.addAll(newStatements); // Añade todos los Statement a la lista
+            // Asume que declaration() devuelve un Statement
+            Statement newStatement = declaration();
+            if (newStatement != null) {
+                statements.add(newStatement); // Añade el Statement a la lista
             }
         }
     
@@ -437,6 +369,7 @@ public class ASDR implements Program{
     
         return new StmtBlock(statements);
     }
+    
     
     private boolean check(TipoToken tipo) {
         if (preanalisis.getTipo() == tipo) {
@@ -760,13 +693,14 @@ private List<Expression> arguments() throws ParserException {
 private Statement function() throws ParserException {
     match(TipoToken.IDENTIFIER);
     Token functionName = previous();
-    String functionScope = generateUniqueScopeName(functionName.getLexema());
+    //String functionScope = generateUniqueScopeName(functionName.getLexema());
 
     // Siempre crea un nuevo alcance para la función
-    entrarNuevoAlcance(functionScope);
-
+    //entrarNuevoAlcance(functionScope);
+    entrarNuevoAlcance(functionName.getLexema());
+        agregarIdentificador(functionName.getLexema(), null); 
     // Registra la función en la tabla de símbolos del alcance actual
-    agregarIdentificador(functionName.getLexema(), null);
+   // agregarIdentificador(functionName.getLexema(), null);
 
     match(TipoToken.LEFT_PAREN);
     List<Token> parameters = parameters_opc();

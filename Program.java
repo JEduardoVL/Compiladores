@@ -1,3 +1,5 @@
+import java.util.List;
+
 public interface Program {
-    boolean progra();
+    List<Statement> progra();
 }

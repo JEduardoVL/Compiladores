@@ -18,6 +18,15 @@ class ExprVariable extends Expression {
 
     @Override
     public Object solve() {
-        return TablaSimbolos.getInstance().get(name.getLexema());
+        TablaSimbolos tablaSimbolos = TablaSimbolos.getInstance();
+        if (!tablaSimbolos.isDeclared(name.getLexema())) {
+            throw new RuntimeException("La variable " + name.getLexema() + " no ha sido declarada");
+        }
+        return tablaSimbolos.get(name.getLexema());
+    }
+
+    @Override
+    public String toString() {
+        return name.getLexema();
     }
 }

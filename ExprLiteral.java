@@ -20,6 +20,15 @@ class ExprLiteral extends Expression {
 
     @Override
     public Object solve() {
-        return value;
+        // Devuelve directamente el valor del literal.
+        // Dado que es un literal, no necesita realizar ninguna operación adicional.
+        return this.value;
+    }
+
+    @Override
+    public String toString() {
+        // Devuelve la representación en cadena del valor.
+        // Utiliza el método toString() del objeto para obtener su representación en cadena.
+        return value.toString();
     }
 }

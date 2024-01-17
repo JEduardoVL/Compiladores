@@ -19,9 +19,14 @@ public class StmtLoop extends Statement {
 
     @Override
     public void execute() {
+        // Evalúa la condición y ejecuta el cuerpo del bucle mientras la condición sea verdadera
         while ((Boolean) condition.solve()) {
             body.execute();
         }
     }
-}
 
+    @Override
+    public String toString() {
+        return "while (" + condition + ") " + body;
+    }
+}

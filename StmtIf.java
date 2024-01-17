@@ -22,13 +22,25 @@ public class StmtIf extends Statement {
     }
 
     @Override
-public void execute() {
-    boolean conditionValue = (Boolean) condition.solve();
-    if (conditionValue) {
-        thenBranch.execute();
-    } else if (elseBranch != null) {
-        elseBranch.execute();
+    public void execute() {
+        // Evalúa la condición
+        boolean conditionValue = (Boolean) condition.solve();
+
+        // Ejecuta la rama correspondiente según el resultado de la condición
+        if (conditionValue) {
+            thenBranch.execute();
+        } else if (elseBranch != null) {
+            elseBranch.execute();
+        }
     }
-}
+
+    @Override
+    public String toString() {
+        String result = "if (" + condition + ") " + thenBranch;
+        if (elseBranch != null) {
+            result += " else " + elseBranch;
+        }
+        return result;
+    }
 }
 

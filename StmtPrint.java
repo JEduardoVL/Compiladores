@@ -14,8 +14,13 @@ public class StmtPrint extends Statement {
     }
 
     @Override
-    void execute() {
+    public void execute() {
         Object value = expression.solve();
-        System.out.println(value);
+        System.out.println(value); // Imprime el valor evaluado
+    }
+
+    @Override
+    public String toString() {
+        return "print " + expression + ";";
     }
 }
